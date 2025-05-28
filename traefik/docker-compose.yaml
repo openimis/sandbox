@@ -21,14 +21,13 @@ services:
       - "--api=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.file.filename=/dynamic.yml"
-      - "--providers.docker.network=mi-traefik_proxy"
       - "--entrypoints.http.address=:80"
       - "--entrypoints.https.address=:443"
       # Enable Let's Encrypt with HTTP challenge
       - "--certificatesResolvers.letsencrypt.acme.tlsChallenge=true"
       - "--certificatesResolvers.letsencrypt.acme.email=contact@s2.openimis.org"
       - "--certificatesResolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-      #- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      #- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt$
       # Redirect all HTTP to HTTPS
       - "--entrypoints.http.http.redirections.entryPoint.to=https"
       - "--entrypoints.http.http.redirections.entryPoint.scheme=https"
@@ -39,9 +38,16 @@ services:
       - "127.0.0.1:8080:8080"
     labels:
       # Dashboard
-      - "traefik.http.routers.traefik.rule=Host(`s2.openimis.org`)"
+      - "traefik.http.routers.traefik.rule=Host(`sb-setup-traefik.bastion.y-note.cm`)"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.entrypoints=https"
+      # **add** our redirect middleware here
+      - "traefik.http.routers.traefik-dashboard.middlewares=dashboard-redirect"
+
+      # middleware that only kicks in when the request path is exactly "/"
+      - "traefik.http.middlewares.dashboard-redirect.redirectregex.regex=^/$"
+      - "traefik.http.middlewares.dashboard-redirect.redirectregex.replacement=/dashboard/"
+      - "traefik.http.middlewares.dashboard-redirect.redirectregex.permanent=true"
 
       # Global redirect to HTTPS
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
@@ -54,6 +60,6 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./logs:/var/log/traefik"
-      - "./conf/traefik/dynamic.yml:/dynamic.yml:ro"
+      - "./dynamic.yml:/dynamic.yml:ro"
       - "./data/letsencrypt:/letsencrypt"
     restart: always
