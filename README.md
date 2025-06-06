@@ -12,3 +12,7 @@ The openIMIS Sandbox Setup is a GIZ-led initiative aimed at enhancing the intero
 ## Traefik
 
 [See Traefik setup instructions](./traefik/readme.md)
+
+
+## Sandbox openIMIS
+[openIMIS Sandbox environment](https://openimis.s2.openimis.org/)
