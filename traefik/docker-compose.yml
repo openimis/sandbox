@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: "traefik:latest"
+    container_name: "traefik"
+    networks:
+      - traefik_bridge
+    command:
+      - "--log.level=DEBUG"  # Change to INFO, WARN, ERROR if needed
+      - "--accesslog=true"   # Enable access logs
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      - "--providers.file.watch=true"
+      - "--providers.file.filename=/dynamic.yml"
+      - "--entryPoints.https.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=contact@openimis.org"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpChallenge.entryPoint=http"
+
+      - "--entrypoints.http.address=0.0.0.0:80"
+    ports:
+      - "80:80"
+      - "443:443" 
+      - "127.0.0.1:8080:8080"
+    labels:
+      # Dashboard
+      - "traefik.http.routers.traefik.rule=Host(`sb-setup-traefik.bastion.y-note.cm`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.entrypoints=https"
+      # **add** our redirect middleware here
+      - "traefik.http.routers.traefik-dashboard.middlewares=dashboard-redirect"
+
+
+
+    volumes:
+      - "./logs:/var/log/traefik"
+      - "./dynamic.yml:/dynamic.yml:ro"
+      - "./data/letsencrypt/acme.json:/acme.json"
+    restart: always
+
+networks:
+  traefik_bridge:
+    driver: bridge

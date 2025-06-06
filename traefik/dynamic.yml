@@ -1,0 +1,51 @@
+http:
+  routers:
+    openspp:
+      rule: Host(`openspp.s2.openimis.org`)
+      entryPoints: [https]
+      service: openspp
+      tls:
+        certResolver: letsencrypt
+
+    openimis:
+      rule: Host(`openimis.s2.openimis.org`)
+      entryPoints: [https]
+      service: openimis
+      tls:
+        certResolver: letsencrypt
+
+    openhimconsole:
+      rule: Host(`openhim.s2.openimis.org`)
+      entryPoints: [https]
+      service: openhimconsole
+      tls:
+        certResolver: letsencrypt
+
+    openhimcore:
+      rule: Host(`openhimcore.s2.openimis.org`)
+      entryPoints: [https]
+      service: openhimcore
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    openspp:
+      loadBalancer:
+        servers:
+          - url: http://192.168.11.192:80
+
+    openimis:
+      loadBalancer:
+        servers:
+          - url: http://192.168.11.230:80
+
+    openhimconsole:
+      loadBalancer:
+        servers:
+          - url: http://192.168.11.31:9000
+
+    openhimcore:
+      loadBalancer:
+        servers:
+          - url: http://192.168.11.31:8080
+
