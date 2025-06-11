@@ -32,7 +32,7 @@ http:
     openspp:
       loadBalancer:
         servers:
-          - url: http://192.168.11.192:80
+          - url: http://192.168.11.192:17069
 
     openimis:
       loadBalancer:
