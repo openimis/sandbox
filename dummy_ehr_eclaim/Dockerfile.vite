@@ -1,0 +1,27 @@
+# Use a specific, stable version of Node.js
+FROM node:20-alpine
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package files first to leverage Docker's layer caching
+COPY package*.json ./
+
+# Install dependencies
+# Using 'npm ci' is often better in CI/CD as it uses package-lock.json
+RUN npm install
+
+# --- Verification Step ---
+# This command will run during the build. If it fails, the build will stop.
+# This proves the vite executable is correctly placed.
+RUN ls -l /app/node_modules/.bin/vite
+
+# Copy the rest of your application code into the image
+COPY . .
+
+# Expose the port Vite runs on
+EXPOSE 5173
+
+# The command to run when the container starts.
+# Since we added '--host' to package.json, this is now clean and simple.
+CMD ["npm", "run", "dev"]

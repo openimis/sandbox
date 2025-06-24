@@ -1,0 +1,56 @@
+name: Laravel CI Workflow
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push events for the main branch
+  push:
+    branches: [ "main", "master" ]
+  # Also triggers on pull requests to the main branch
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  # This workflow contains a single job called "test"
+  test:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the code from the repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Setup the .env file for the CI environment
+      - name: Copy .env file
+        run: cp .env.example .env
+
+      # 3. Build and Start the Docker containers using the CI compose file
+      - name: Build and Run Containers
+        run: docker-compose -f docker-compose.ci.yml up -d
+
+      # 4. Wait a few seconds for services to be fully available
+      - name: Wait for Services
+        run: sleep 15
+
+      # 5. Run Composer Install (just in case, good practice)
+      # Note: This should be fast as it's already cached in the Docker image
+      - name: Install Composer Dependencies
+        run: docker-compose -f docker-compose.ci.yml exec -T laravel composer install --no-interaction --prefer-dist
+
+      # 6. Generate App Key and Run Migrations on the test database
+      - name: Prepare Laravel Application
+        run: |
+          docker-compose -f docker-compose.ci.yml exec -T laravel php artisan key:generate
+          docker-compose -f docker-compose.ci.yml exec -T laravel php artisan migrate --seed --force
+
+      # 7. Run PHP Linter (Pint)
+      - name: Run PHP Linter
+        run: docker-compose -f docker-compose.ci.yml exec -T laravel ./vendor/bin/pint --test
+
+      # 8. Run Laravel Tests (PHPUnit/Pest)
+      - name: Run Laravel Tests
+        run: docker-compose -f docker-compose.ci.yml exec -T laravel php artisan test
+
+      # 9. Check Frontend Production Build
+      - name: Check Vite Production Build
+        run: docker-compose -f docker-compose.ci.yml exec -T vite npm run build
