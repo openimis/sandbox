@@ -1,0 +1,19 @@
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx-openhim
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./logs:/var/log/nginx
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    networks:
+      - openhim-network
+
+
+networks:
+  default:
+  openhim-network:
+    external: true
+    name: openhim-common_default
