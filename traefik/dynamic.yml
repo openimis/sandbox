@@ -5,6 +5,20 @@ http:
       entryPoints: [https]
       service: openspp
       tls:
+    certResolver: letsencrypt
+
+    bahmni:
+      rule: Host(`bahmni.s2.openimis.org`)
+      entryPoints: [https]
+      service: bahmni
+      tls:
+        certResolver: letsencrypt
+
+    odoo:
+      rule: Host(`odoo.s2.openimis.org`)
+      entryPoints: [https]
+      service: odoo
+      tls:
         certResolver: letsencrypt
 
     openimis:
@@ -21,18 +35,23 @@ http:
       tls:
         certResolver: letsencrypt
 
-    openhimcore:
-      rule: Host(`openhimcore.s2.openimis.org`)
-      entryPoints: [https]
-      service: openhimcore
-      tls:
-        certResolver: letsencrypt
-
   services:
     openspp:
       loadBalancer:
         servers:
           - url: http://192.168.11.192:17069
+
+    bahmni:
+      loadBalancer:
+        servers:
+          - url: https://192.168.11.192:443
+        passHostHeader: true
+        serversTransport: bahmni-transport
+
+    odoo:
+      loadBalancer:
+        servers:
+          - url: http://192.168.11.192:8069
 
     openimis:
       loadBalancer:
@@ -42,10 +61,8 @@ http:
     openhimconsole:
       loadBalancer:
         servers:
-          - url: http://192.168.11.31:9000
+          - url: http://192.168.11.31:80
 
-    openhimcore:
-      loadBalancer:
-        servers:
-          - url: http://192.168.11.31:8080
-
+  serversTransports:
+    bahmni-transport:
+      insecureSkipVerify: true
