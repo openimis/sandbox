@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # The Laravel application service for testing
+  laravel:
+    build:
+      context: .
+      dockerfile: Dockerfile.laravel
+    container_name: myapp-laravel-ci
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      # Use a separate database for testing
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_DATABASE: pharmacy_test
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      APP_ENV: testing
+      APP_KEY: base64:yourtestappkeygeneratedlocally== # A static key for CI
+      BCRYPT_ROUNDS: 4 # Speeds up tests
+    networks:
+      - app-network
+
+  # The Vite service for frontend checks
+  vite:
+    build:
+      context: .
+      dockerfile: Dockerfile.vite
+    container_name: myapp-vite-ci
+    networks:
+      - app-network
+
+  # The database service
+  mysql:
+    image: mysql:8.0
+    container_name: myapp-mysql-ci
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      retries: 10
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: pharmacy_test
+    networks:
+      - app-network
+
+networks:
+  app-network:

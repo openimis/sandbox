@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>openIMIS Reactive Subscriber</title>
+    
+    <!-- Include Alpine.js from CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js"></script>
+    
+    <style>
+        /* Modern CSS styles for a clean, professional interface */
+        :root {
+            --brand-color: #007bff;
+            --brand-hover: #0056b3;
+            --danger-color: #dc3545;
+            --danger-hover: #c82333;
+            --success-color: #28a745;
+            --light-gray: #f8f9fa;
+            --border-color: #dee2e6;
+            --text-color: #212529;
+            --text-light: #6c757d;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: var(--text-color);
+            margin: 0;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 1rem 1.5rem;
+            background-color: var(--light-gray);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-body {
+            padding: 1.5rem;
+        }
+        h1, h2, h3 {
+            margin-top: 0;
+        }
+        h1 {
+            color: var(--brand-hover);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        h2 { color: var(--brand-hover); margin-bottom: 0; }
+        h3 { color: var(--text-light); }
+        .button {
+            font-size: 1rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .button-primary { background-color: var(--brand-color); color: white; }
+        .button-primary:hover:not(:disabled) { background-color: var(--brand-hover); }
+        .button-primary:disabled { background-color: #a0c7ff; cursor: not-allowed; }
+        .button-danger { background-color: var(--danger-color); color: white; }
+        .button-danger:hover { background-color: var(--danger-hover); }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+        input[type="text"], input[type="url"] {
+            width: 100%;
+            padding: 0.75rem;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+        tr:last-child td { border-bottom: none; }
+        th { background-color: var(--light-gray); font-weight: 600; }
+        .icon-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 0.2rem; }
+        .flash-message {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .flash-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .spinner {
+            animation: spin 1s linear infinite;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-left-color: white;
+            border-radius: 50%;
+            width: 1em;
+            height: 1em;
+            margin-right: 0.5em;
+        }
+        .polling-indicator {
+            width: 10px; height: 10px; background-color: var(--success-color); border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); } }
+        [x-cloak] { display: none !important; }
+
+        /* Modal Styles */
+        .modal {
+            display: flex; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe; padding: 20px; border: 1px solid #888;
+            width: 80%; max-width: 700px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-header h2 { margin: 0; }
+        .close-btn { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-btn:hover { color: #000; }
+        .modal-body pre { background-color: #eee; padding: 15px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; max-height: 60vh; overflow-y: auto; }
+    </style>
+</head>
+
+<body x-data="appState()" x-init="init()" x-cloak>
+    
+    <div class="container">
+        <h1>openIMIS Reactive Subscriber</h1>
+
+        <template x-if="flash.message">
+            <div x-text="flash.message" :class="flash.type === 'success' ? 'flash-success' : 'flash-error'" class="flash-message" x-show="flash.visible" x-transition></div>
+        </template>
+
+        <div class="card">
+            <div class="card-header"><h2>Manage Subscriptions</h2></div>
+            <div class="card-body">
+                <form @submit.prevent="subscribe()">
+                    <div class="form-group">
+                        <label for="openimis_url">openIMIS Base URL</label>
+                        <input type="url" id="openimis_url" x-model="form.openimis_url" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="callback_url">Your Callback URL</label>
+                        <input type="url" id="callback_url" x-model="form.callback_url" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="criteria">Resource to Subscribe To</label>
+                        <input type="text" id="criteria" x-model="form.criteria" required>
+                    </div>
+                    <button type="submit" class="button button-primary" :disabled="isLoading.subscribing">
+                        <span x-show="isLoading.subscribing" class="spinner"></span>
+                        <span x-text="isLoading.subscribing ? 'Subscribing...' : 'Subscribe'"></span>
+                    </button>
+                </form>
+
+                <hr style="margin: 2rem 0; border-top: 1px solid var(--border-color);">
+                <h3>Active Subscriptions</h3>
+                <div x-show="isLoading.initial">Loading subscriptions...</div>
+                <template x-if="!isLoading.initial && subscriptions.length === 0"><p>You have no active subscriptions.</p></template>
+                <template x-if="!isLoading.initial && subscriptions.length > 0">
+                    <table>
+                        <thead>
+                            <tr><th>Criteria</th><th>Subscription ID</th><th>Action</th></tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="sub in subscriptions" :key="sub.id">
+                                <tr>
+                                    <td x-text="sub.criteria"></td>
+                                    <td><small x-text="sub.id"></small></td>
+                                    <td>
+                                        <button class="button button-danger" @click="unsubscribe(sub.id)" title="Unsubscribe">×</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>Received Notifications</h2>
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-light);">
+                    <div class="polling-indicator"></div>
+                    <span>Listening for updates...</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div x-show="isLoading.initial">Loading notifications...</div>
+                <template x-if="!isLoading.initial && notifications.length === 0"><p>No notifications received yet.</p></template>
+                <template x-if="!isLoading.initial && notifications.length > 0">
+                     <table>
+                        <thead>
+                            <tr><th>ID</th><th>Received At</th><th>View</th></tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in notifications" :key="item.id">
+                            <tr>
+                                <td x-text="item.id"></td>
+                                <td x-text="new Date(item.received_at).toLocaleString()"></td>
+                                <td><button @click="viewNotification(item)" class="icon-btn" title="View Details">👁️</button></td>
+                            </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for viewing notification details -->
+    <div x-show="modal.isOpen" class="modal" @click.self="modal.isOpen = false" @keydown.escape.window="modal.isOpen = false" x-transition>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Notification Details</h2>
+                <span class="close-btn" @click="modal.isOpen = false">×</span>
+            </div>
+            <div class="modal-body">
+                <pre x-text="modal.content"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function appState() {
+            return {
+                isLoading: { initial: true, subscribing: false },
+                subscriptions: [],
+                notifications: [],
+                form: {
+                    openimis_url: 'http://localhost:8000',
+                    callback_url: 'http://host.docker.internal:5001/callback',
+                    criteria: 'Claim'
+                },
+                modal: { isOpen: false, content: '' },
+                flash: { message: '', type: '', visible: false },
+
+                async init() {
+                    await this.fetchAllData();
+                    // Start polling for new notifications every 2 seconds
+                    setInterval(() => { this.checkForUpdates() }, 2000);
+                },
+
+                async fetchAllData() {
+                    const response = await fetch('/api/data');
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.subscriptions = data.subscriptions;
+                        this.notifications = data.notifications;
+                    } else {
+                        this.showFlash('Error: Failed to fetch data from the server.', 'error');
+                    }
+                    this.isLoading.initial = false;
+                },
+
+                async checkForUpdates() {
+                    try {
+                        const response = await fetch(`/api/check_updates?count=${this.notifications.length}`);
+                        if (!response.ok) return; // Fail silently on poll error
+                        const result = await response.json();
+
+                        if (result.has_new_data) {
+                            console.log("New notification detected! Refreshing list...");
+                            this.showFlash('New notification received!', 'success');
+                            await this.fetchAllData(); // Refresh all data if there's an update
+                        }
+                    } catch (error) {
+                        console.error("Polling error:", error); // Log polling errors but don't bother the user
+                    }
+                },
+
+                async subscribe() {
+                    this.isLoading.subscribing = true;
+                    const response = await fetch('/api/subscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.form)
+                    });
+                    const result = await response.json();
+                    if (response.ok) {
+                        this.subscriptions.unshift(result.data);
+                        this.showFlash('Subscription successful!', 'success');
+                    } else {
+                        this.showFlash(`Error: ${result.message}`, 'error');
+                    }
+                    this.isLoading.subscribing = false;
+                },
+
+                async unsubscribe(id) {
+                    if (!confirm('Are you sure you want to unsubscribe?')) return;
+                    const response = await fetch(`/api/unsubscribe/${id}`, { method: 'DELETE' });
+                    const result = await response.json();
+                    if (response.ok) {
+                        this.subscriptions = this.subscriptions.filter(sub => sub.id !== id);
+                        this.showFlash('Unsubscribed successfully.', 'success');
+                    } else {
+                        this.showFlash(`Error: ${result.message}`, 'error');
+                    }
+                },
+
+                viewNotification(item) {
+                    try {
+                        this.modal.content = JSON.stringify(JSON.parse(item.content), null, 2);
+                    } catch (e) {
+                        this.modal.content = item.content;
+                    }
+                    this.modal.isOpen = true;
+                },
+
+                showFlash(message, type = 'success') {
+                    this.flash.message = message;
+                    this.flash.type = type;
+                    this.flash.visible = true;
+                    setTimeout(() => { this.flash.visible = false }, 4000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
