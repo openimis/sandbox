@@ -1,0 +1,22 @@
+# .dockerignore
+
+# Python virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Database file (should be handled by a volume)
+*.db
+*.db-journal
+
+# Git directory
+.git/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Environment files (should be injected at runtime)
+.env
