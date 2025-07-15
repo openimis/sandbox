@@ -9,9 +9,5 @@ services:
       - "5001:5001"
     volumes:
       - .:/app
-      - db_data:/app/notifications.db
     env_file:
       - .env
-
-volumes:
-  db_data:

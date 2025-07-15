@@ -224,6 +224,7 @@ def openimis_callback():
     # Always return a valid JSON response to satisfy the openIMIS client.
     return jsonify({'status': 'received'}), 200
 
+init_db_if_not_exists()
+
 if __name__ == '__main__':
-    init_db_if_not_exists()
     app.run(host='0.0.0.0', debug=True, port=5001)
