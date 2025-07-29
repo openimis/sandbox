@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 # Load backend configuration from environment variables
-BACKEND_URL = f"{os.getenv('BACKEND_API_HOST')}:{os.getenv('BACKEND_API_PORT')}/api/api_fhir_r4"
+BACKEND_URL = f"{os.getenv('BACKEND_API_HOST')}/api/api_fhir_r4"
 LOGIN_URL = f"{BACKEND_URL}/login/"
 CLAIM_URL = f"{BACKEND_URL}/Claim/"
 
