@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  laravel:
+    build:
+      context: .
+      # Use the PHP-only dockerfile from the previous answer
+      dockerfile: Dockerfile
+    container_name: simulated-fhir-ehr-openimis
+    ports:
+      - "8000:8000"
+    volumes:
+      # Sync your application code from host to container
+      - .:/app
+      # BUT, keep the 'vendor' directory from the image build, so you don't need to run 'composer install' locally
+      - /app/vendor
+    depends_on:
+      - mysql
+    environment:
+      DB_HOST: mysql
+      DB_CONNECTION: mysql
+      DB_DATABASE: pharmacy
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      
+
+  vite:
+    build:
+      context: .
+      dockerfile: Dockerfile.vite
+    container_name: ehr-vite
+    ports:
+      - "5173:5173"
+      - "24678:24678" # Port for HMR websocket connections, sometimes needed
+    volumes:
+      # Sync your application code from host to container
+      - .:/app
+      # *** THE CRUCIAL FIX ***
+      # This tells Docker: "The /app/node_modules directory inside the container
+      # should NOT be overwritten by the host mount above."
+      # It preserves the node_modules we installed in the Dockerfile.
+      - /app/node_modules
+    # The command is now handled by the Dockerfile's CMD, but you can leave this for clarity.
+    # Since we edited package.json, we no longer need the extra "-- --host" here.
+    command: npm run dev
+
+  mysql:
+    image: mysql:8.0
+    container_name: database
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s # Give it some time to start up before the first chec    
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: pharmacy
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  artisan:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: artisan-runner
+    volumes:
+      - .:/app
+      - /app/vendor
+    # Wait until the mysql service is not just started, but healthy
+    depends_on:
+      mysql:
+        condition: service_healthy
+    # The command this container will run, and then it will exit
+    command: >
+      sh -c "
+        php artisan key:generate &&
+        php artisan config:clear &&
+        php artisan migrate --seed
+      "
+volumes:
+  mysql-data:
+    name: ehr-app-database
+
+networks:
+  app-network:
+    name: ehr-app-network

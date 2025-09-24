@@ -1,0 +1,2 @@
+# Ignore nginx logs
+nginx/logs/
