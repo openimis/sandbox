@@ -35,6 +35,20 @@ http:
       tls:
         certResolver: letsencrypt
 
+    cht:
+      rule: Host(`cht.s2.openimis.org`)
+      entryPoints: [https]
+      service: cht
+      tls:
+        certResolver: letsencrypt
+
+    glitchtip:
+      rule: Host(`cht.s2.openimis.org`)
+      entryPoints: [https]
+      service: glitchtip
+      tls:
+        certResolver: letsencrypt
+
   services:
     openspp:
       loadBalancer:
@@ -62,6 +76,16 @@ http:
       loadBalancer:
         servers:
           - url: http://192.168.11.31:80
+
+    cht:
+      loadBalancer:
+        servers:
+          - url: http://192.168.11.122:80
+
+    glitchtip:
+      loadBalancer:
+        servers:
+          - url: http://192.168.11.221:80
 
   serversTransports:
     bahmni-transport:
