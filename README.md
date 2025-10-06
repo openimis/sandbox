@@ -10,9 +10,13 @@ The openIMIS Sandbox Setup is a GIZ-led initiative aimed at enhancing the intero
 [Discover the project](https://openimis.atlassian.net/wiki/spaces/OP/pages/4059955305/Project+2024.T4+Sandbox+Setup)
 
 ## Traefik
-
 [See Traefik setup instructions](./traefik/readme.md)
-
 
 ## Sandbox openIMIS
 [openIMIS Sandbox environment](https://openimis.s2.openimis.org/)
+
+## Mailpit
+[Mailpit environment](https://mailpit.s2.openimis.org/)
+
+## GlitchTip
+[GlitchTip environment](https://glitchtip.s2.openimis.org/)

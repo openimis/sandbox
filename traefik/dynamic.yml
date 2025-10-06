@@ -41,11 +41,17 @@ http:
       service: cht
       tls:
         certResolver: letsencrypt
-
     glitchtip:
-      rule: Host(`cht.s2.openimis.org`)
+      rule: Host(`glitchtip.s2.openimis.org`)
       entryPoints: [https]
       service: glitchtip
+      tls:
+        certResolver: letsencrypt
+        
+    mailpit:
+      rule: Host(`mailpit.s2.openimis.org`)
+      entryPoints: [https]
+      service: mailpit
       tls:
         certResolver: letsencrypt
 
@@ -80,13 +86,22 @@ http:
     cht:
       loadBalancer:
         servers:
-          - url: http://192.168.11.122:80
+          - url: https://192.168.11.122:443
+        passHostHeader: true
+        serversTransport: cht-transport
 
     glitchtip:
       loadBalancer:
         servers:
-          - url: http://192.168.11.221:80
+          - url: http://192.168.11.221:8000
+
+    mailpit:
+      loadBalancer:
+        servers:
+          - url: http://192.168.11.221:8025
 
   serversTransports:
     bahmni-transport:
+      insecureSkipVerify: true
+    cht-transport:
       insecureSkipVerify: true
