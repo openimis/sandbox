@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>openIMIS FHIR R4 Docs</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/rapidoc/dist/rapidoc-min.js"></script>
+  </head>
+  <script>
+    const rapidoc = document.getElementById('my-rapidoc');
+
+    rapidoc.addEventListener('before-try', (e) => {
+        const originalFetch = window.fetch;
+        
+        window.fetch = function(url, options = {}) {
+            // Utiliser un proxy pour les requêtes externes
+            if (!url.includes('localhost') && !url.includes('127.0.0.1')) {
+                url = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+            }
+            
+            // Forcer les headers CORS
+            options.mode = 'cors';
+            options.headers = {
+                ...options.headers,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            };
+            
+            return originalFetch(url, options);
+        };
+    });
+  </script>
+
+  <body>
+    <rapi-doc
+      spec-url="openimis-fhir-enquireeng.json"
+      allow-spec-url-load="false"
+      allow-spec-file-load="false"
+      allow-spec-file-download="false"
+      theme="dark"
+      render-style="focused"
+      show-header="true"
+      allow-try="true"
+      allow-authentication="true"
+      primary-color="#00b0ff"
+      background-color="#264A78"
+      text-color="#ffffff"
+      regular-font="Arial, sans-serif"
+      show-curl-before-try="true"
+      cors-proxy="https://cors-anywhere.herokuapp.com/" 
+      show-method-in-nav-bar="as-colored-block"
+      style="font-family: 'Beretta', sans-serif; font-size: 12px; line-height: 1.6;"
+      nav-bg-color="#245862"
+      nav-text-color="#245862"
+    >
+    <div slot="overview" style="font-family: 'Beretta', sans-serif; font-size: 14px; line-height: 1.6;">
+      <p>
+          This documentation guides you in understanding and integrating the openIMIS FHIR R4 APIs. 
+          It specifically covers the <strong><span style="color: #00b0ff">Login</span></strong> and 
+          <strong><span style="color: #00b0ff;">Insured Patient Enquiry</span></strong> endpoints.
+          </br>These FHIR R4 APIs enable developers and implementers to securely query insured patient 
+          information from openIMIS and integrate it into applications, web portals, or internal systems. 
+          This documentation presents the available endpoints, their JWT-based authentication mechanisms, 
+          operational modes, and integration best practices.
+      </p>
+      <div style="
+          font-family: 'Beretta', sans-serif;
+          background: #001f2a; 
+          padding: 15px; 
+          border-radius: 5px;
+          border-left: 4px solid #00b0ff;
+          border-right: 4px solid #00b0ff;
+          margin-bottom: 20px;
+          font-size: 14px; 
+      ">
+          <strong>Required configuration for testing:</strong><br>
+          To test these APIs directly from this documentation page, install the 
+          <strong>"Cross Domain - CORS"</strong> browser extension.</br>
+          (Example for Google Chrome <a style="color: green;" href="https://chromewebstore.google.com/detail/mjhpgnbimicffchbodmgfnemoghjakai?utm_source=item-share-cb">Available here</a>)
+          </br></br>
+          Once the extension is added, include your openIMIS server URLs such as 
+          <strong><span style="color: #00b0ff;">demo.openimis.org</span></strong>, 
+          <strong><span style="color: #00b0ff;">openimis.s2.openimis.org</span></strong>, or 
+          <strong><span style="color: #00b0ff;">your-openimis-instance.com</span></strong>.
+          </br>
+          Without this extension, your requests will be blocked by CORS policy.
+      </div>
+  </div>
+
+  </rapi-doc>
+  </body>
+</html>

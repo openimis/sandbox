@@ -1,0 +1,312 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "openIMIS – FHIR R4 Insured Inquiry API",
+        "version": "1.0.0",
+        "description": "## Overview\n\nThis API provides access to openIMIS patient and insurance data using the **FHIR R4 (Fast Healthcare Interoperability Resources)** standard. FHIR is a global healthcare data exchange standard developed by HL7.\n\n### What is FHIR?\n\nFHIR R4 is a standard for exchanging healthcare information electronically. It defines how healthcare data should be formatted and exchanged between different systems. For complete FHIR R4 documentation specific to openIMIS, visit: [https://fhir.openimis.org/](https://fhir.openimis.org/)\n\n### API Capabilities\n\nThis API currently supports:\n- **Authentication**: Secure JWT-based authentication\n- **Patient Inquiry**: Query insured patient information using FHIR R4 Patient resources\n\n### Getting Started\n\n1. **Authenticate** using the `/api/api_fhir_r4/login/` endpoint to obtain a JWT token\n2. **Query patients** using the `/api/api_fhir_r4/Patient/{identifier}/` endpoint with your token\n\n### Response Format\n\nAll responses follow the FHIR R4 specification:\n- Successful queries return FHIR `Patient` resources\n- Errors return FHIR `OperationOutcome` resources\n\n## 🔐 Authentication\n\nYou must first authenticate via `/api/api_fhir_r4/login/` to receive a **JWT (JSON Web Token)**. This token must be included in the `Authorization` header of all subsequent API calls as a Bearer token.\n\n**Token Format**: `Authorization: Bearer <your_jwt_token>`\n\n**Token Expiration**: The token includes an expiration time (`exp` field in the response). You'll need to re-authenticate when the token expires.\n\n## 📚 Additional Resources\n\n- **openIMIS FHIR Documentation**: [https://fhir.openimis.org/](https://fhir.openimis.org/)\n- **FHIR R4 Specification**: [http://hl7.org/fhir/R4/](http://hl7.org/fhir/R4/)\n- **openIMIS Documentation**: [https://docs.openimis.org/](https://docs.openimis.org/)\n"
+    },
+   
+    "servers": [
+        {
+            "url": "http://localhost/",
+            "description": "Local openIMIS development server (for testing)"
+        },
+        {
+            "url": "https://demo.openimis.org/",
+            "description": "openIMIS demonstration server (public demo environment)"
+        },
+        {
+            "url": "https://release.openimis.org/",
+            "description": "openIMIS release server (staging environment)"
+        },
+        {
+            "url": "https://openimis.s2.openimis.org/",
+            "description": "openIMIS sandbox server (testing environment)"
+        }
+    ],
+
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "Authentication endpoints for obtaining and managing JWT tokens. All protected endpoints require a valid JWT token obtained through the login endpoint."
+        },
+        {
+            "name": "Insured Inquiry",
+            "description": "FHIR R4 endpoints for querying insured patient information. These endpoints return patient demographics, insurance coverage details, and related health facility information in FHIR-compliant format.\n\nFor detailed information about FHIR Patient resources, see: [https://fhir.openimis.org/](https://fhir.openimis.org/)"
+        }
+    ],
+  
+    "paths": {
+        "/api/api_fhir_r4/login/": {
+            "post": {
+                "operationId": "api_fhir_r4_login_create",
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Authenticate to openIMIS and obtain JWT token",
+                "description": "## Purpose\n\nAuthenticates a user to the openIMIS system and returns a JWT (JSON Web Token) for accessing protected FHIR R4 endpoints.\n\n## Authentication Flow\n\n1. Send username and password to this endpoint\n2. Receive a JWT token in the response\n3. Use this token in the `Authorization` header for subsequent API calls\n4. Re-authenticate when the token expires (check the `exp` field)\n\n## Token Usage\n\nInclude the returned token in subsequent requests:\n```\nAuthorization: Bearer <your_jwt_token>\n```\n\n## Security Notes\n\n- Tokens are time-limited (see `exp` field for expiration timestamp)\n- Store tokens securely and never expose them in client-side code\n- Use HTTPS in production environments\n- Failed authentication attempts return HTTP 401 Unauthorized\n\n## Response Details\n\n**Success (200)**: Returns a JSON object with:\n- `token`: The JWT token string to use in subsequent requests\n- `exp`: Unix timestamp when the token expires\n\n**Failure (401)**: Authentication failed - check username/password",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InlineLoginRequest"
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InlineLoginRequest"
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InlineLoginRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InlineLoginResponse"
+                                },
+                                "example": {
+                                    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                                    "exp": 1704112800
+                                }
+                            }
+                        },
+                        "description": "Authentication successful. Returns JWT token and expiration time."
+                    },
+                    "401": {
+                        "description": "Authentication failed. Invalid username or password.",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": "Invalid credentials"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-codeSamples": [
+                    {
+                        "lang": "curl",
+                        "label": "CURL",
+                        "source": "curl -X POST \"http://localhost/api/api_fhir_r4/login/\" \\\n -H 'accept: application/json' \\\n -H 'content-type: application/json' \\\n -d '{\"username\":\"string\",\"password\":\"string\"}'"
+                    },
+                    {
+                        "lang": "python",
+                        "label": "Python",
+                        "source": "import requests\n\nurl = \"https://demo.openimis.org/api/api_fhir_r4/login/\"\nheaders = {\n  \"Content-Type\": \"application/json\"\n}\ndata = {\n  \"username\": \"your_username\",\n  \"password\": \"your_password\"\n}\n\nresponse = requests.post(url, headers=headers, json=data)\ntoken_data = response.json()\n\n# Extract the token for future requests\njwt_token = token_data['token']\nprint(f\"Token: {jwt_token}\")\nprint(f\"Expires at: {token_data['exp']}\")"
+                    },
+                    {
+                        "lang": "php",
+                        "label": "PHP",
+                        "source": "<?php\n$ch = curl_init();\ncurl_setopt($ch, CURLOPT_URL, \"https://demo.openimis.org/api/api_fhir_r4/login/\");\ncurl_setopt($ch, CURLOPT_POST, true);\ncurl_setopt($ch, CURLOPT_HTTPHEADER, [\n  \"Content-Type: application/json\"\n]);\ncurl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([\n  \"username\" => \"your_username\",\n  \"password\" => \"your_password\"\n]));\ncurl_setopt($ch, CURLOPT_RETURNTRANSFER, true);\n$response = curl_exec($ch);\ncurl_close($ch);\n\n$data = json_decode($response, true);\necho \"Token: \" . $data['token'] . \"\\n\";\necho \"Expires: \" . $data['exp'] . \"\\n\";\n?>"
+                    },
+                    {
+                        "lang": "ruby",
+                        "label": "Ruby",
+                        "source": "require \"net/http\"\nrequire \"uri\"\nrequire \"json\"\n\nuri = URI(\"https://demo.openimis.org/api/api_fhir_r4/login/\")\nrequest = Net::HTTP::Post.new(uri)\nrequest[\"Content-Type\"] = \"application/json\"\nrequest.body = JSON.generate({\n  \"username\" => \"your_username\",\n  \"password\" => \"your_password\"\n})\n\nresponse = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|\n  http.request(request)\nend\n\ndata = JSON.parse(response.body)\nputs \"Token: #{data['token']}\"\nputs \"Expires: #{data['exp']}\""
+                    },
+                    {
+                        "lang": "java",
+                        "label": "Java",
+                        "source": "import java.net.*;\nimport java.io.*;\nimport org.json.JSONObject;\n\npublic class Main {\n  public static void main(String[] args) throws Exception {\n    URL url = new URL(\"https://demo.openimis.org/api/api_fhir_r4/login/\");\n    HttpURLConnection conn = (HttpURLConnection) url.openConnection();\n    conn.setRequestMethod(\"POST\");\n    conn.setRequestProperty(\"Content-Type\", \"application/json\");\n    conn.setDoOutput(true);\n\n    JSONObject data = new JSONObject();\n    data.put(\"username\", \"your_username\");\n    data.put(\"password\", \"your_password\");\n    try(OutputStream os = conn.getOutputStream()) {\n      os.write(data.toString().getBytes());\n    }\n\n    BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));\n    String inputLine;\n    StringBuilder content = new StringBuilder();\n    while ((inputLine = in.readLine()) != null) {\n      content.append(inputLine);\n    }\n    in.close();\n    conn.disconnect();\n\n    JSONObject result = new JSONObject(content.toString());\n    System.out.println(\"Token: \" + result.getString(\"token\"));\n    System.out.println(\"Expires: \" + result.getInt(\"exp\"));\n  }\n}"
+                    },
+                    {
+                        "lang": "javascript",
+                        "label": "JavaScript",
+                        "source": "fetch('https://demo.openimis.org/api/api_fhir_r4/login/', {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json'\n  },\n  body: JSON.stringify({\n    username: 'your_username',\n    password: 'your_password'\n  })\n})\n.then(response => response.json())\n.then(data => {\n  console.log('Token:', data.token);\n  console.log('Expires:', data.exp);\n  // Store token for future requests\n  localStorage.setItem('jwt_token', data.token);\n})\n.catch(error => console.error('Error:', error));"
+                    },
+                    {
+                        "lang": "go",
+                        "label": "Go",
+                        "source": "package main\n\nimport (\n  \"bytes\"\n  \"encoding/json\"\n  \"fmt\"\n  \"io/ioutil\"\n  \"net/http\"\n)\n\nfunc main() {\n  url := \"https://demo.openimis.org/api/api_fhir_r4/login/\"\n  payload := map[string]string{\n    \"username\": \"your_username\",\n    \"password\": \"your_password\",\n  }\n  jsonData, _ := json.Marshal(payload)\n\n  req, _ := http.NewRequest(\"POST\", url, bytes.NewBuffer(jsonData))\n  req.Header.Set(\"Content-Type\", \"application/json\")\n\n  client := &http.Client{}\n  resp, _ := client.Do(req)\n  body, _ := ioutil.ReadAll(resp.Body)\n  \n  var result map[string]interface{}\n  json.Unmarshal(body, &result)\n  fmt.Printf(\"Token: %s\\n\", result[\"token\"])\n  fmt.Printf(\"Expires: %v\\n\", result[\"exp\"])\n}"
+                    }
+                ],
+                "security": []
+            }
+        },
+
+        "/api/api_fhir_r4/Patient/{identifier}/": {
+            "get": {
+                "operationId": "api_fhir_r4_Patient_retrieve",
+                "summary": "Retrieve patient information by identifier",
+                "description": "## Purpose\n\nRetrieves comprehensive patient information from openIMIS using a FHIR R4 Patient resource format. This endpoint returns demographic data, insurance details, and location information for a given patient UUID.\n\n## Important: UUID-Only Endpoint\n\nThis endpoint **only accepts the patient's UUID** (the openIMIS internal identifier) in the URL path. It does **not** accept insurance numbers (CHFID) or national IDs.\n\n**To search by insurance number or other identifiers**, you would need to:\n1. Use a FHIR search operation (e.g., `/Patient?identifier=105000002`) - if your openIMIS instance supports it\n2. Or use a different openIMIS API endpoint that accepts CHFID lookups\n\n## Finding the Patient UUID\n\nIf you only have an insurance number (CHFID) or national ID and need to get the UUID, you may need to:\n- Use openIMIS's standard inquiry endpoints\n- Query through a different API that maps CHFID → UUID\n- Access the patient data through enrollment workflows\n\n## FHIR Patient Resource\n\nThe response follows the FHIR R4 Patient resource specification. For detailed field descriptions, see: [https://fhir.openimis.org/](https://fhir.openimis.org/)\n\n## Response Structure\n\nThe Patient resource includes:\n\n### Core Demographics\n- **name**: Patient's full name (family name and given names)\n- **birthDate**: Date of birth in YYYY-MM-DD format\n- **gender**: Administrative gender (M/F/U)\n- **maritalStatus**: Marital status code\n\n### Contact Information\n- **address**: Physical address details\n- **telecom**: Contact information (phone, email)\n\n### Identifiers in the Response\n\nThe response contains multiple identifier types in the `identifier` array:\n- **UUID** (code: \"UUID\"): openIMIS internal unique identifier - **THIS is the only identifier that can be used in the URL path for this endpoint**\n- **SB** (code: \"Code\"): Social Beneficiary number (insurance number/CHFID) - returned in response but cannot be used to query this endpoint\n\n**Important**: Only the UUID can be used in `/api/api_fhir_r4/Patient/{uuid}/` queries. The other identifiers are for informational purposes and would require different query mechanisms (e.g., search parameters).\n\n### Extensions (openIMIS-specific data)\n\nThe response includes custom extensions for openIMIS-specific attributes:\n\n- **isHead**: Boolean indicating if patient is head of household\n- **registrationDate**: When the patient was registered in openIMIS\n- **locationCode**: Reference to the patient's administrative location (village/district)\n- **educationCode**: Patient's education level\n- **professionCode**: Patient's profession/occupation\n- **povertyStatus**: Boolean indicating poverty status for targeting\n\nFor complete extension definitions, see: [https://fhir.openimis.org/](https://fhir.openimis.org/)\n\n## Authentication\n\nThis endpoint requires a valid JWT token obtained from the `/api/api_fhir_r4/login/` endpoint.\n\nInclude the token in your request:\n```\nAuthorization: Bearer <your_jwt_token>\n```\n\n## Error Handling\n\n- **400 Bad Request**: Invalid identifier format\n- **404 Not Found**: No patient found with the given identifier (returns FHIR OperationOutcome)\n- **401 Unauthorized**: Missing or invalid JWT token\n\n## Example Workflow\n\n1. Authenticate and obtain JWT token\n2. Obtain the patient's UUID (from enrollment data, previous queries, or other openIMIS endpoints)\n3. Call this endpoint with the UUID\n4. Parse the returned FHIR Patient resource\n5. Extract needed information (demographics, insurance status, location, etc.)\n\n**Note**: The response will contain multiple identifier types in the `identifier` array (UUID and insurance number/CHFID), but only the UUID can be used to query this specific endpoint.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "identifier",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "01EEDC6C-436C-465F-86C2-6FF68644D751"
+                        },
+                        "required": true,
+                        "description": "**Patient UUID** (Resource ID)\n\nThis must be the openIMIS internal UUID for the patient (e.g., `01EEDC6C-436C-465F-86C2-6FF68644D751`).\n\n**Important**: This endpoint **only accepts UUIDs**, not insurance numbers (CHFID) or national IDs. Those identifiers are returned in the response within the `identifier` array, but cannot be used to query this endpoint.\n\nFor complete Patient resource documentation, see: [https://fhir.openimis.org/StructureDefinition-openimis-patient.html](https://fhir.openimis.org/StructureDefinition-openimis-patient.html)"
+                    }
+                ],
+                "tags": [
+                    "Insured Inquiry"
+                ],
+                "security": [
+                    {
+                        "JWT Authentication": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "## Successful Response\n\nReturns a FHIR R4 Patient resource with complete patient information.\n\n### Key Fields Explained\n\n- **resourceType**: Always \"Patient\" for this endpoint\n- **id**: openIMIS internal UUID for the patient\n- **identifier**: Array of different identifier types (UUID and insurance number/CHFID). **Note**: While the response contains multiple identifier types, only the UUID (found in both the `id` field and as an identifier with type \"UUID\") can be used to query this endpoint via the URL path.\n- **name**: Patient's name (family name + given names)\n- **gender**: M (Male), F (Female), or U (Unknown)\n- **birthDate**: ISO 8601 date format (YYYY-MM-DD)\n- **address**: Physical address with type and use indicators\n- **telecom**: Contact methods (phone, email)\n- **maritalStatus**: FHIR-compliant marital status code\n- **extension**: openIMIS-specific extensions (see description above)\n- **photo**: Reference to patient photo if available\n\n### Understanding Extensions\n\nExtensions contain openIMIS-specific data not in the base FHIR specification:\n\n1. **isHead** (`valueBoolean`): Whether patient is household head\n2. **registrationDate** (`valueDateTime`): When patient enrolled\n3. **locationCode** (`valueReference`): Links to Location resource\n4. **educationCode** (`valueCoding`): Education level with code and display text\n5. **professionCode** (`valueCoding`): Profession with code and display text\n6. **povertyStatus** (`valueBoolean`): Poverty classification\n\nFor detailed extension schemas: [https://fhir.openimis.org/](https://fhir.openimis.org/)\n\n### Sample Response\n\n```json\n{\n  \"resourceType\": \"Patient\",\n  \"id\": \"01EEDC6C-436C-465F-86C2-6FF68644D751\",\n  \"identifier\": [\n    {\n      \"type\": {\n        \"coding\": [{\n          \"code\": \"UUID\",\n          \"system\": \"https://hl7.org/fhir/valueset-identifier-type.html\"\n        }]\n      },\n      \"use\": \"usual\",\n      \"value\": \"01EEDC6C-436C-465F-86C2-6FF68644D751\"\n    },\n    {\n      \"type\": {\n        \"coding\": [{\n          \"code\": \"SB\",\n          \"system\": \"https://hl7.org/fhir/valueset-identifier-type.html\"\n        }]\n      },\n      \"use\": \"usual\",\n      \"value\": \"105000002\"\n    }\n  ],\n  \"name\": [{\n    \"use\": \"usual\",\n    \"family\": \"Banda\",\n    \"given\": [\"James\"]\n  }],\n  \"gender\": \"male\",\n  \"birthDate\": \"1987-01-07\",\n  \"address\": [{\n    \"use\": \"home\",\n    \"type\": \"physical\",\n    \"text\": \"5 Tsoka Village\"\n  }],\n  \"maritalStatus\": {\n    \"coding\": [{\n      \"system\": \"http://hl7.org/fhir/valueset-marital-status.html\",\n      \"code\": \"M\"\n    }],\n    \"text\": \"Married\"\n  },\n  \"extension\": [\n    {\n      \"url\": \"https://openimis.atlassian.net/wiki/spaces/OP/pages/960069653/isHead\",\n      \"valueBoolean\": true\n    },\n    {\n      \"url\": \"https://openimis.atlassian.net/wiki/spaces/OP/pages/960331788/educationCode\",\n      \"valueCoding\": {\n        \"code\": \"3\",\n        \"display\": \"Secondary school\"\n      }\n    },\n    {\n      \"url\": \"https://openimis.atlassian.net/wiki/spaces/OP/pages/960135203/professionCode\",\n      \"valueCoding\": {\n        \"code\": \"3\",\n        \"display\": \"Self Employee\"\n      }\n    },\n    {\n      \"url\": \"https://openimis.atlassian.net/wiki/spaces/OP/pages/1556643849/povertyStatus\",\n      \"valueBoolean\": true\n    }\n  ]\n}\n```",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "FHIR R4 Patient resource"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "## Patient Not Found\n\nReturned when no patient matches the provided UUID.\n\n### FHIR OperationOutcome\n\nErrors follow the FHIR OperationOutcome resource format:\n- **resourceType**: Always \"OperationOutcome\"\n- **issue**: Array of issue details\n  - **severity**: Error severity level\n  - **code**: FHIR-defined issue type code\n  - **details**: Human-readable error description\n\n### Troubleshooting\n\nIf you receive this error:\n1. Verify you're using the patient's **UUID**, not the insurance number or national ID\n2. Check if the UUID is correctly formatted (should be a valid UUID)\n3. Ensure the patient exists in the system\n4. Confirm you have the correct UUID from your source data\n\n### Example Error Response\n\n```json\n{\n  \"resourceType\": \"OperationOutcome\",\n  \"issue\": [\n    {\n      \"severity\": \"error\",\n      \"code\": \"not-found\",\n      \"details\": {\n        \"text\": \"Resource for identifier 01EEDC6C-436C-465F-86C2-6FF68644D751 not found\"\n      }\n    }\n  ]\n}\n```",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InlineError"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "## Unauthorized\n\nReturned when:\n- No JWT token is provided in the Authorization header\n- The JWT token is invalid or malformed\n- The JWT token has expired\n\n### Resolution\n\n1. Ensure you've called `/api/api_fhir_r4/login/` first\n2. Include the token in your request header: `Authorization: Bearer <token>`\n3. If token expired, re-authenticate to get a new token\n\n### Example\n\n```bash\ncurl -X GET \"https://demo.openimis.org/api/api_fhir_r4/Patient/01EEDC6C-436C-465F-86C2-6FF68644D751/\" \\\n  -H \"Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGc...\"\n```"
+                    }
+                },
+                "x-codeSamples": [
+                    {
+                        "lang": "curl",
+                        "label": "CURL",
+                        "source": "# First, authenticate and get token\nTOKEN=$(curl -X POST \"https://demo.openimis.org/api/api_fhir_r4/login/\" \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"username\":\"your_user\",\"password\":\"your_pass\"}' \\\n  | jq -r '.token')\n\n# Then query patient\ncurl -X GET \"https://demo.openimis.org/api/api_fhir_r4/Patient/01EEDC6C-436C-465F-86C2-6FF68644D751/\" \\\n  -H \"Authorization: Bearer $TOKEN\""
+                    },
+                    {
+                        "lang": "python",
+                        "label": "Python",
+                        "source": "import requests\n\n# Step 1: Authenticate\nlogin_url = \"https://demo.openimis.org/api/api_fhir_r4/login/\"\nlogin_data = {\n    \"username\": \"your_username\",\n    \"password\": \"your_password\"\n}\nauth_response = requests.post(login_url, json=login_data)\ntoken = auth_response.json()['token']\n\n# Step 2: Query patient\npatient_url = \"https://demo.openimis.org/api/api_fhir_r4/Patient/01EEDC6C-436C-465F-86C2-6FF68644D751/\"\nheaders = {\n    \"Authorization\": f\"Bearer {token}\"\n}\n\nresponse = requests.get(patient_url, headers=headers)\npatient_data = response.json()\n\n# Access patient information\nprint(f\"Patient Name: {patient_data['name'][0]['given'][0]} {patient_data['name'][0]['family']}\")\nprint(f\"Gender: {patient_data['gender']}\")\nprint(f\"Birth Date: {patient_data['birthDate']}\")"
+                    },
+                    {
+                        "lang": "php",
+                        "label": "PHP",
+                        "source": "<?php\n// Step 1: Authenticate\n$ch = curl_init();\ncurl_setopt($ch, CURLOPT_URL, \"https://demo.openimis.org/api/api_fhir_r4/login/\");\ncurl_setopt($ch, CURLOPT_POST, true);\ncurl_setopt($ch, CURLOPT_HTTPHEADER, [\"Content-Type: application/json\"]);\ncurl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([\n    \"username\" => \"your_username\",\n    \"password\" => \"your_password\"\n]));\ncurl_setopt($ch, CURLOPT_RETURNTRANSFER, true);\n$auth_response = curl_exec($ch);\ncurl_close($ch);\n\n$auth_data = json_decode($auth_response, true);\n$token = $auth_data['token'];\n\n// Step 2: Query patient\n$ch = curl_init();\ncurl_setopt($ch, CURLOPT_URL, \"https://demo.openimis.org/api/api_fhir_r4/Patient/01EEDC6C-436C-465F-86C2-6FF68644D751/\");\ncurl_setopt($ch, CURLOPT_HTTPHEADER, [\n    \"Authorization: Bearer \" . $token\n]);\ncurl_setopt($ch, CURLOPT_RETURNTRANSFER, true);\n$patient_response = curl_exec($ch);\ncurl_close($ch);\n\n$patient = json_decode($patient_response, true);\necho \"Patient: \" . $patient['name'][0]['given'][0] . \" \" . $patient['name'][0]['family'];\n?>"
+                    },
+                    {
+                        "lang": "javascript",
+                        "label": "JavaScript",
+                        "source": "// Step 1: Authenticate\nconst loginResponse = await fetch('https://demo.openimis.org/api/api_fhir_r4/login/', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    username: 'your_username',\n    password: 'your_password'\n  })\n});\n\nconst { token } = await loginResponse.json();\n\n// Step 2: Query patient\nconst patientResponse = await fetch(\n  'https://demo.openimis.org/api/api_fhir_r4/Patient/01EEDC6C-436C-465F-86C2-6FF68644D751/',\n  {\n    headers: { 'Authorization': `Bearer ${token}` }\n  }\n);\n\nconst patient = await patientResponse.json();\nconsole.log('Patient:', patient.name[0].given[0], patient.name[0].family);\nconsole.log('Gender:', patient.gender);\nconsole.log('Birth Date:', patient.birthDate);"
+                    }
+                ]
+            }
+        }
+    },
+    
+    "components": {
+        "schemas": {
+            "InlineLoginRequest": {
+                "type": "object",
+                "description": "Credentials required for authentication",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "description": "openIMIS username",
+                        "example": "admin"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "User password",
+                        "format": "password",
+                        "example": "P@ssw0rd"
+                    }
+                },
+                "required": [
+                    "username",
+                    "password"
+                ]
+            },
+            "InlineLoginResponse": {
+                "type": "object",
+                "description": "Successful authentication response containing JWT token",
+                "properties": {
+                    "token": {
+                        "type": "string",
+                        "description": "JWT token to use in Authorization header for subsequent API calls. Format: `Authorization: Bearer <token>`",
+                        "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6ImFkbWluIiwiZXhwIjoxNzA0MTEyODAwfQ.abc123"
+                    },
+                    "exp": {
+                        "type": "integer",
+                        "description": "Token expiration time as Unix timestamp (seconds since epoch). Re-authenticate before this time to maintain access.",
+                        "example": 1704112800
+                    }
+                },
+                "required": [
+                    "token",
+                    "exp"
+                ]
+            },
+            "InlineError": {
+                "type": "object",
+                "description": "FHIR R4 OperationOutcome resource for error responses. See https://www.hl7.org/fhir/operationoutcome.html",
+                "properties": {
+                    "resourceType": {
+                        "type": "string",
+                        "description": "FHIR resource type - always 'OperationOutcome' for errors",
+                        "enum": ["OperationOutcome"],
+                        "example": "OperationOutcome"
+                    },
+                    "issue": {
+                        "type": "array",
+                        "description": "Array of issues encountered during the operation",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "severity": {
+                                    "type": "string",
+                                    "description": "Severity of the issue",
+                                    "enum": ["fatal", "error", "warning", "information"],
+                                    "example": "error"
+                                },
+                                "code": {
+                                    "type": "string",
+                                    "description": "FHIR issue type code",
+                                    "example": "not-found"
+                                },
+                                "details": {
+                                    "type": "object",
+                                    "properties": {
+                                        "text": {
+                                            "type": "string",
+                                            "description": "Human-readable description of the error",
+                                            "example": "Resource for identifier 12345 not found"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "resourceType",
+                    "issue"
+                ]
+            }
+        },
+        "securitySchemes": {
+            "JWT Authentication": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "JWT token obtained from the `/api/api_fhir_r4/login/` endpoint. Include in requests as: `Authorization: Bearer <token>`"
+            }
+        }
+    }
+}
