@@ -1,0 +1,171 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-09-17 08:46+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: insuree/gql_mutations.py:132 insuree/gql_mutations.py:166
+#: insuree/gql_mutations.py:232 insuree/gql_mutations.py:266
+msgid "mutation.authentication_required"
+msgstr "User must be authenticated for this operation"
+
+#: insuree/gql_mutations.py:134 insuree/gql_mutations.py:168
+#: insuree/gql_mutations.py:197 insuree/gql_mutations.py:234
+#: insuree/gql_mutations.py:268 insuree/gql_mutations.py:301
+#: insuree/gql_mutations.py:343 insuree/gql_mutations.py:387
+#: insuree/gql_mutations.py:427 insuree/gql_queries.py:29
+#: insuree/gql_queries.py:114 insuree/gql_queries.py:123
+#: insuree/gql_queries.py:130 insuree/gql_queries.py:139
+#: insuree/gql_queries.py:169 insuree/gql_queries.py:184
+#: insuree/gql_queries.py:190 insuree/gql_queries.py:214 insuree/schema.py:42
+#: insuree/schema.py:127 insuree/schema.py:136 insuree/schema.py:159
+#: insuree/schema.py:164 insuree/schema.py:209 insuree/schema.py:218
+#: insuree/schema.py:223 insuree/schema.py:228 insuree/schema.py:233
+#: insuree/schema.py:238 insuree/schema.py:243 insuree/schema.py:248
+#: insuree/schema.py:299 insuree/schema.py:303 insuree/schema.py:313
+#: insuree/schema.py:316 insuree/tests/test_graphql.py:106
+#: insuree/tests/test_graphql.py:139
+msgid "unauthorized"
+msgstr "User not authorized for this operation"
+
+#: insuree/gql_mutations.py:146
+msgid "insuree.mutation.failed_to_create_family"
+msgstr "Failed to create family"
+
+#: insuree/gql_mutations.py:178
+#, fuzzy
+#| msgid "insuree.mutation.failed_to_create_family"
+msgid "insuree.mutation.failed_to_update_family"
+msgstr "Failed to create family"
+
+#: insuree/gql_mutations.py:207 insuree/services.py:524
+msgid "insuree.mutation.failed_to_delete_family"
+msgstr "Failed to delete family %(uuid)s"
+
+#: insuree/gql_mutations.py:246
+msgid "insuree.mutation.failed_to_create_insuree"
+msgstr "Failed to create insuree"
+
+#: insuree/gql_mutations.py:281
+msgid "insuree.mutation.failed_to_update_insuree"
+msgstr "Failed to update insuree"
+
+#: insuree/gql_mutations.py:312 insuree/gql_mutations.py:354
+msgid "insuree.validation.id_does_not_exist"
+msgstr "Insuree %(id)s doesn't exist"
+
+#: insuree/gql_mutations.py:319
+msgid "insuree.validation.delete_head_insuree"
+msgstr "Cannot delete family head insuree %(id)s"
+
+#: insuree/gql_mutations.py:361
+msgid "insuree.validation.remove_head_insuree"
+msgstr "Cannot remove head insuree %(id)s from family"
+
+#: insuree/gql_mutations.py:406
+msgid "insuree.mutation.failed_to_set_head_insuree"
+msgstr "Failed to set family head insuree"
+
+#: insuree/gql_mutations.py:446
+msgid "insuree.mutation.failed_to_change_insuree_family"
+msgstr "Failed to change insuree from family"
+
+#: insuree/schema.py:145
+msgid "insuree.validation.policy_above_max_members"
+msgstr ""
+"Policy %(product_code)s - %(start_date)s covers max %(max)s insurees. "
+"Current family members count: %(count)s"
+
+#: insuree/services.py:59
+msgid "validator_module_import_error"
+msgstr "Validator module import error."
+
+#: insuree/services.py:63
+msgid "validator_function_not_found"
+msgstr "Validator function not found."
+
+#: insuree/services.py:76
+#, python-format
+msgid "Invalid insuree number (empty), should be %s"
+msgstr ""
+
+#: insuree/services.py:84
+#, python-format
+msgid "Invalid insuree number length %s, should be maximun %s"
+msgstr ""
+
+#: insuree/services.py:95
+#, python-format
+msgid "Invalid insuree number length %s, should be minimum %s"
+msgstr ""
+
+#: insuree/services.py:270
+msgid "insuree.validation.insuree_requires_dob"
+msgstr "Insuree requires date of birth."
+
+#: insuree/services.py:272
+msgid "insuree.validation.insuree_requires_gender"
+msgstr "Insuree requires gender."
+
+#: insuree/services.py:274
+msgid "insuree.validation.insuree_requires_status"
+msgstr "Insuree requires status."
+
+#: insuree/services.py:280
+#, fuzzy
+#| msgid "insuree.validation.worker_requires_other_names"
+msgid "worker_requires_other_names"
+msgstr "Worker requires other names."
+
+#: insuree/services.py:282
+#, fuzzy
+#| msgid "insuree.validation.worker_requires_last_name"
+msgid "worker_requires_last_name"
+msgstr "Worker requires last name."
+
+#: insuree/services.py:317 insuree/services.py:324
+#, fuzzy
+#| msgid "insuree.validation.insuree_requires_status"
+msgid "mutation.insuree.wrong_status"
+msgstr "Insuree requires status."
+
+#: insuree/services.py:319
+#, fuzzy
+#| msgid "mutation.authentication_required"
+msgid "mutation.insuree.no_required_photo"
+msgstr "User must be authenticated for this operation"
+
+#: insuree/services.py:395
+msgid "insuree.mutation.failed_to_remove_insuree"
+msgstr "Failed to remove insuree %(chfid)s from its family"
+
+#: insuree/services.py:411
+msgid "insuree.mutation.failed_to_delete_insuree"
+msgstr "Failed to delete insuree %(chfid)s"
+
+#: insuree/services.py:431
+msgid "insuree.mutation.failed_to_cancel_insuree_policies"
+msgstr "Failed to cancel policies of insuree %(chfid)s"
+
+#: insuree/utils.py:8
+#, python-brace-format
+msgid "{instance_name_str}_national_id_checksum_not_valid"
+msgstr ""
+
+#: insuree/utils.py:11
+#, python-brace-format
+msgid "{instance_name_str}_national_id_not_valid"
+msgstr ""
