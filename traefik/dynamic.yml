@@ -5,7 +5,7 @@ http:
       entryPoints: [https]
       service: openspp
       tls:
-    certResolver: letsencrypt
+        certResolver: letsencrypt
 
     bahmni:
       rule: Host(`bahmni.s2.openimis.org`)
@@ -33,7 +33,7 @@ http:
       entryPoints: [https]
       service: openimisdev
       tls:
-       	certResolver: letsencrypt
+        certResolver: letsencrypt
 
     docopenimisfhir:
       rule: Host(`fhirdoc.s2.openimis.org`)
