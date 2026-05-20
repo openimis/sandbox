@@ -562,6 +562,10 @@ case "INSUREE_CRVS_VERIFY_CLEAR":
         workersExportPageInfo: {},
         errorWorkersExport: null,
       };
+      case "INSUREE_SR_VERIFY_REQ":  return { ...state, fetchingSR: true };
+      case "INSUREE_SR_VERIFY_RESP": return { ...state, fetchingSR: false, srData: action.payload?.data?.socialRegistrySearch };
+      case "INSUREE_SR_VERIFY_ERR":  return { ...state, fetchingSR: false };
+      case "INSUREE_SR_VERIFY_CLEAR": return { ...state, srData: null };
     case "INSUREE_MUTATION_REQ":
       return dispatchMutationReq(state, action);
     case "INSUREE_MUTATION_ERR":

@@ -4,6 +4,7 @@ import { Paper, Grid, Typography, Divider, Checkbox, FormControlLabel } from "@m
 // Make sure this path is correct based on your file structure
 import ESignetVerification from "./ESignetVerification"; 
 import FarmerRegistryVerification from "./FarmerRegistryVerification";
+import SocialRegistryVerification from "./SocialRegistryVerification";
 
 import {
   formatMessage,
@@ -21,6 +22,7 @@ import {
 } from "@openimis/fe-core";
 
 import { DEFAULT, INSUREE_ACTIVE_STRING } from "../constants";
+import Verification from "./Verification";
 
 const INSUREE_INSUREE_CONTRIBUTION_KEY = "insuree.Insuree";
 const INSUREE_INSUREE_PANELS_CONTRIBUTION_KEY = "insuree.Insuree.panels";
@@ -150,7 +152,7 @@ class InsureeMasterPanel extends FormPanel {
     } = this.props;
 
     const existingVerification = edited?.jsonExt?.eSignetVerificationDate;
-
+  const { selectedRegistry } = this.state;
     return (
       <Grid container>
         <Grid item xs={12}>
@@ -193,11 +195,28 @@ class InsureeMasterPanel extends FormPanel {
 
             <div style={{ padding: '16px' }}>
                 {edited?.uuid ? (
-                    <FarmerRegistryVerification 
+                  <>
+                    <Verification 
                          identifier={edited?.passport}
                          updateAttribute={this.updateAttribute}
                          disabled={readOnly}
                     />
+                 
+                    {/* <FarmerRegistryVerification 
+                         identifier={edited?.passport}
+                         updateAttribute={this.updateAttribute}
+                         disabled={readOnly}
+                    />
+                    &nbsp;
+                    &nbsp;
+                    &nbsp;
+                    <>Social Registry</>
+                    <SocialRegistryVerification 
+                         identifier={edited?.passport}
+                         updateAttribute={this.updateAttribute}
+                         disabled={readOnly}
+                    /> */}
+                    </>
                 ) : (
                     <ESignetVerification 
                         onUserDataReceived={this.handleESignetDataReceived}

@@ -541,40 +541,388 @@ export function fetchCRVSEligibility(identifierValue) {
         transactionId
         correlationId
         searchResponse {
+          referenceId
           status
           statusReasonCode
+          statusReasonMessage
+          locale
+          pagination {
+            pageSize
+            pageNumber
+            totalCount
+          }
           regRecords {
             registrationDate
-            famerPersonalDetails {
+            lastUpdated
+            farmerPersonalDetails {
+              selfIdDisability
+              maritalStatus
+              languageCode
+              educationLevel
+              registrationDate
+              lastUpdated
               memberIdentifier {
                 identifierType
                 identifierValue
               }
               demographicInfo {
-                gender
-                dateOfBirth
+                sex
+                birthDate
+                phoneNumber
+                registrationDate
+                lastUpdated
                 name {
-                  firstName
-                  lastName
+                  givenName
+                  secondName
+                  surname
+                  prefix
+                  suffix
                 }
               }
             }
-          }
-          pagination {
-            pageSize
-            pageNumber
-            totalCount
+            familyDetails {
+              groupType
+              povertyScore
+              povertyScoreType
+              groupSize
+              registrationDate
+              lastUpdated
+              groupIdentifier {
+                identifierType
+                identifierValue
+              }
+              place {
+                name
+                geo {
+                  latitude
+                  longitude
+                }
+              }
+              memberList {
+                selfIdDisability
+                maritalStatus
+                registrationDate
+                lastUpdated
+                memberIdentifier {
+                  identifierType
+                  identifierValue
+                }
+                demographicInfo {
+                  sex
+                  birthDate
+                  name {
+                    givenName
+                    secondName
+                    surname
+                    prefix
+                    suffix
+                  }
+                }
+              }
+            }
+            farmDetails {
+              farmType
+              landTenure
+              landSize
+              measurement
+              registrationDate
+              lastUpdated
+              place {
+                name
+                geo {
+                  latitude
+                  longitude
+                }
+              }
+              farmingActivities {
+                mixedFarming
+                agriSupportActivities
+                cropProduction {
+                  cropType
+                  variety
+                  season
+                  irrigation
+                  irrigationWater
+                  endUse
+                }
+                animalProduction {
+                  type
+                  count
+                  livestockSystem
+                }
+              }
+            }
           }
         }
       }
     }`;
     return graphql(payload, "INSUREE_CRVS_VERIFY");
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Add these to your existing actions.js
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function fetchSocialRegistryData1(identifierValue) {
+    const payload = `
+    query {
+      socialRegistrySearch(identifierValue: "${identifierValue}") {
+        transactionId
+        correlationId
+        searchResponse {
+          referenceId
+          status
+          statusReasonCode
+          statusReasonMessage
+          locale
+          pagination {
+            pageSize
+            pageNumber
+            totalCount
+          }
+          regRecords {
+            registrationDate
+            lastUpdated
+
+            personalDetails {
+              selfIdDisability
+              maritalStatus
+              languageCode
+              educationLevel
+              registrationDate
+              lastUpdated
+              memberIdentifier {
+                identifierType
+                identifierValue
+              }
+              demographicInfo {
+                sex
+                birthDate
+                phoneNumber
+                email
+                registrationDate
+                lastUpdated
+                name {
+                  givenName
+                  secondName
+                  surname
+                  prefix
+                  suffix
+                }
+              }
+            }
+
+            householdDetails {
+              groupType
+              povertyScore
+              povertyScoreType
+              groupSize
+              registrationDate
+              lastUpdated
+              groupIdentifier {
+                identifierType
+                identifierValue
+              }
+              place {
+                name
+                geo {
+                  latitude
+                  longitude
+                }
+              }
+              memberList {
+                selfIdDisability
+                maritalStatus
+                registrationDate
+                lastUpdated
+                memberIdentifier {
+                  identifierType
+                  identifierValue
+                }
+                demographicInfo {
+                  sex
+                  birthDate
+                  name {
+                    givenName
+                    secondName
+                    surname
+                    prefix
+                    suffix
+                  }
+                }
+              }
+            }
+
+            economicDetails {
+              incomeLevel
+              incomeSource
+              assetOwnership
+              housingType
+              hasElectricity
+              hasCleanWater
+              registrationDate
+              lastUpdated
+            }
+
+            benefits {
+              programName
+              programCode
+              benefitType
+              enrollmentDate
+              expiryDate
+              status
+              amount
+              currency
+            }
+          }
+        }
+      }
+    }`;
+    return graphql(payload, "INSUREE_SR_VERIFY");
+}
+
+export function clearSocialRegistryData1() {
+    return (dispatch) => {
+        dispatch({ type: "INSUREE_SR_VERIFY_CLEAR" });
+    };
+}
+
+
 export function clearCRVSData() {
     return (dispatch) => {
         dispatch({ type: "INSUREE_CRVS_VERIFY_CLEAR" });
     };
 }
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Add these to your existing actions.js
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function fetchSocialRegistryData(identifierValue) {
+    const payload = `
+    query {
+      socialRegistrySearch(identifierValue: "${identifierValue}") {
+        transactionId
+        correlationId
+        searchResponse {
+          referenceId
+          status
+          statusReasonCode
+          statusReasonMessage
+          locale
+          pagination {
+            pageSize
+            pageNumber
+            totalCount
+          }
+          regRecords {
+            registrationDate
+            lastUpdated
+
+            personalDetails {
+              selfIdDisability
+              maritalStatus
+              languageCode
+              educationLevel
+              registrationDate
+              lastUpdated
+              memberIdentifier {
+                identifierType
+                identifierValue
+              }
+              demographicInfo {
+                sex
+                birthDate
+                phoneNumber
+                email
+                registrationDate
+                lastUpdated
+                name {
+                  givenName
+                  secondName
+                  surname
+                  prefix
+                  suffix
+                }
+              }
+            }
+
+            householdDetails {
+              groupType
+              povertyScore
+              povertyScoreType
+              groupSize
+              registrationDate
+              lastUpdated
+              groupIdentifier {
+                identifierType
+                identifierValue
+              }
+              place {
+                name
+                geo {
+                  latitude
+                  longitude
+                }
+              }
+              memberList {
+                selfIdDisability
+                maritalStatus
+                registrationDate
+                lastUpdated
+                memberIdentifier {
+                  identifierType
+                  identifierValue
+                }
+                demographicInfo {
+                  sex
+                  birthDate
+                  name {
+                    givenName
+                    secondName
+                    surname
+                    prefix
+                    suffix
+                  }
+                }
+              }
+            }
+
+            economicDetails {
+              incomeLevel
+              incomeSource
+              assetOwnership
+              housingType
+              hasElectricity
+              hasCleanWater
+              registrationDate
+              lastUpdated
+            }
+
+            benefits {
+              programName
+              programCode
+              benefitType
+              enrollmentDate
+              expiryDate
+              status
+              amount
+              currency
+            }
+          }
+        }
+      }
+    }`;
+    return graphql(payload, "INSUREE_SR_VERIFY");
+}
+
+export function clearSocialRegistryData() {
+    return (dispatch) => {
+        dispatch({ type: "INSUREE_SR_VERIFY_CLEAR" });
+    };
+}
+
 
 // Replicated from Policy Module
 function formatPolicyGQL(policy) {

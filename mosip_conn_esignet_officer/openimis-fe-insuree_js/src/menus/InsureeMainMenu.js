@@ -70,6 +70,15 @@ class InsureeMainMenu extends Component {
         id: "insuree.insurees", 
       });
     }
+    
+      entries.push({
+        text: "ODK workfow",
+        icon: <Person />,
+        route: "odk/importflow",
+        id: "insuree.insurees", 
+      });
+    
+    console.log("entries", entries);
     entries.push(
       ...this.props.modulesManager
         .getContribs(INSUREE_MAIN_MENU_CONTRIBUTION_KEY)
