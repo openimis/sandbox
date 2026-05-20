@@ -26,6 +26,9 @@ from policy.models import Policy
 from core.models import Officer, Role, UserRole
 from location.models import UserDistrict
 import os
+import uuid
+import requests
+from datetime import datetime, timezone
 # We do need all queries and mutations in the namespace here.
 from .gql_queries import *  # lgtm [py/polluting-import]
 from .gql_mutations import *  # lgtm [py/polluting-import]
@@ -70,106 +73,523 @@ class Query(ExportableQueryMixin, graphene.ObjectType):
     exportable_fields = ['insurees']
 
     sync_search = graphene.Field(CRVSQueryResult, identifier_value=graphene.String())
+    social_registry_search = graphene.Field(
+        SocialRegistryQueryResult,
+        identifier_value=graphene.String()
+    )
 
-    def resolve_sync_search(self, info, identifier_value):
+    # --- Move these to the top of your file ---
 
+    # ------------------------------------------
+
+    import uuid
+    import requests
+    from datetime import datetime, timezone
+
+    def resolve_social_registry_search(self, info, identifier_value):
+        # ── 1. Set Correct Endpoint ───────────────────────────────────────────────
+        url = "https://partner-nsr.play.openg2p.org/dci/registry/sync/search"
+        headers = {
+            "accept": "application/json",
+            "Content-Type": "application/json",
+        }
+
+        current_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        # ── 2. Construct Payload (with Strict Swagger $ref Validation) ────────────
         payload = {
-            "signature": "Signature not implemented",
+            "signature": "Signature-not-impl",
             "header": {
                 "version": "1.0.0",
-                "message_id": "123",
-                "message_ts": datetime.utcnow().isoformat() + "Z",
+                "message_id": str(uuid.uuid4()),
+                "message_ts": current_time,
                 "action": "search",
                 "sender_id": "spmis.example.org",
                 "sender_uri": "https://spmis.example.org/consumer-namespace/callback/on-search",
                 "receiver_id": "farmer.example.org",
-                "total_count": 1,
+                "total_count": 0,
                 "is_msg_encrypted": False,
-                "meta": {}
+                "meta": {},
             },
             "message": {
-                "transaction_id": "XZFHYTY",
+                "transaction_id": str(uuid.uuid4()),
                 "search_request": [
                     {
-                        "reference_id": "SDFRTYUX",
-                        "timestamp": datetime.utcnow().isoformat() + "Z",
+                        "reference_id": str(uuid.uuid4()),
+                        "timestamp": current_time,
                         "search_criteria": {
                             "version": "1.0.0",
-                            "reg_type": "Farmer",
-                            "reg_record_type": "spdci-extensions-dci:FR",
-                            "query_type": "idtype-value",
+                            "reg_type": "Individual",
+                            "reg_record_type": "Individual",
+                            "query_type": "expression",
                             "query": {
-                                "type": "UIN",
-                                "value": identifier_value
+                                "type": "ns:org:QueryType:expression",
+                                "value": {
+                                    "expression": {
+                                        "query": {
+                                            "search_text": {
+                                                "$eq": identifier_value
+                                            }
+                                        }
+                                    }
+                                },
                             },
-                            "sort": [],
-                            "pagination": {"page_size": 2, "page_number": 1},
-                            "consent": {"@type": "Consent", "purpose": {"text": "Verification"}},
-                            "authorize": {"@type": "Authorize", "purpose": {"text": "Verification"}}
+                            "pagination": {"page_size": 100, "page_number": 1},
+                            "consent": {
+                                "@context": "https://schema.spdci.org/common/v1/api-schemas/Consent.jsonld",
+                                "@type": "Consent",
+                                "ts": {
+                                    "$ref": "#/components/schemas/MsgHeader_V1.0.0/properties/message_ts"
+                                },
+                                "purpose": {
+                                    "text": {"type": "string"},
+                                    "code": {"type": "string", "description": "From a fixed set, documented at refUri"},
+                                    "ref_uri": {"type": "string", "format": "uri", "description": "Uri to provide more info on consent codes"},
+                                },
+                            },
+                            "authorize": {
+                                "@context": "https://schema.spdci.org/common/v1/api-schemas/Authorize.jsonld",
+                                "@type": "Authorize",
+                                "ts": {
+                                    "$ref": "#/components/schemas/MsgHeader_V1.0.0/properties/message_ts"
+                                },
+                                "purpose": {
+                                    "text": {"type": "string"},
+                                    "code": {"type": "string", "description": "From a fixed set, documented at refUri"},
+                                    "ref_uri": {"type": "string", "format": "uri", "description": "Uri to provide more info on authorize codes"},
+                                },
+                            },
                         },
-                        "locale": "eng"
+                        "locale": "eng",
                     }
+                ],
+            },
+        }
+
+        # ── 3. Execute Request ────────────────────────────────────────────────────
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+            print(f"[SocialRegistry] Status: {response.status_code} | Body: {response.text}")
+            
+            if not response.ok:
+                print(f"[SocialRegistry] API Error {response.status_code}: {response.text}")
+                return None
+                
+            data = response.json()
+            
+        except Exception as e:
+            print(f"[SocialRegistry] Request failed: {e}")
+            return None
+
+        # ── 4. Parse Flat Data into Graphene Schema ───────────────────────────────
+        msg = data.get("message", {})
+        results = []
+
+        for res in msg.get("search_response", []):
+            data_block = res.get("data", {})
+            records = []
+
+            for rec in data_block.get("reg_records", []):
+
+                # -- Personal Details ----------------------------------------------
+                pd = rec  # Data is flat on the root record in the API
+                demo = pd.get("demographic_info", {})
+                raw_name = demo.get("name", {})
+
+                # Safely handle email list-to-string conversion for Graphene
+                raw_email = demo.get("email", [])
+                email_val = raw_email[0] if isinstance(raw_email, list) and len(raw_email) > 0 else raw_email if isinstance(raw_email, str) else None
+
+                # Safely cast integer 0/1 to boolean for Graphene
+                raw_disability = pd.get("self_id_disability")
+                disability_val = bool(raw_disability) if raw_disability is not None else None
+
+                personal = SRPersonalDetailsType(
+                    member_identifier=[
+                        SRIdentifierType(
+                            identifier_type=i.get("identifier_type"),
+                            identifier_value=i.get("identifier_value"),
+                        )
+                        for i in pd.get("member_identifier", [])
+                    ],
+                    demographic_info=SRDemographicInfoType(
+                        name=SRNameType(
+                            given_name=raw_name.get("given_name"),
+                            second_name=raw_name.get("second_name"),
+                            surname=raw_name.get("surname"),
+                            prefix=raw_name.get("prefix"),
+                            suffix=raw_name.get("suffix"),
+                        ),
+                        sex=demo.get("sex"),
+                        birth_date=demo.get("birth_date"),
+                        phone_number=demo.get("phone_number", []),
+                        email=email_val,
+                        registration_date=demo.get("registration_date"),
+                        last_updated=demo.get("last_updated"),
+                    ),
+                    self_id_disability=disability_val,
+                    marital_status=pd.get("marital_status"),
+                    language_code=pd.get("language_code", []),
+                    education_level=pd.get("education_level"),
+                    registration_date=pd.get("registration_date"),
+                    last_updated=pd.get("last_updated"),
+                )
+
+                # -- Household Details ---------------------------------------------
+                hh = rec.get("family_details", {}) or rec.get("household_details", {})
+                hh_place = hh.get("place", {})
+                hh_geo   = hh_place.get("geo", {})
+
+                # Extract household ID from additional_attributes array
+                additional_attrs = rec.get("additional_attributes", [{}])
+                hh_id = additional_attrs[0].get("household_identifier") if additional_attrs else None
+                
+                group_identifiers = [
+                    SRIdentifierType(
+                        identifier_type=i.get("identifier_type"),
+                        identifier_value=i.get("identifier_value"),
+                    ) for i in hh.get("group_identifier", [])
                 ]
+                
+                if hh_id and not group_identifiers:
+                    group_identifiers.append(SRIdentifierType(identifier_type="HouseholdID", identifier_value=hh_id))
+
+                members = []
+                for m in hh.get("member_list", []):
+                    m_demo = m.get("demographic_info", {})
+                    m_name = m_demo.get("name", {})
+                    
+                    m_raw_disability = m.get("self_id_disability")
+                    m_disability_val = bool(m_raw_disability) if m_raw_disability is not None else None
+
+                    members.append(SRHouseholdMemberType(
+                        member_identifier=[
+                            SRIdentifierType(
+                                identifier_type=i.get("identifier_type"),
+                                identifier_value=i.get("identifier_value"),
+                            )
+                            for i in m.get("member_identifier", [])
+                        ],
+                        demographic_info=SRDemographicInfoType(
+                            name=SRNameType(
+                                given_name=m_name.get("given_name"),
+                                second_name=m_name.get("second_name"),
+                                surname=m_name.get("surname"),
+                                prefix=m_name.get("prefix"),
+                            ),
+                            sex=m_demo.get("sex"),
+                            birth_date=m_demo.get("birth_date"),
+                            registration_date=m_demo.get("registration_date"),
+                            last_updated=m_demo.get("last_updated"),
+                        ),
+                        self_id_disability=m_disability_val,
+                        marital_status=m.get("marital_status"),
+                        registration_date=m.get("registration_date"),
+                        last_updated=m.get("last_updated"),
+                    ))
+
+                household = SRHouseholdDetailsType(
+                    group_identifier=group_identifiers,
+                    group_type=hh.get("group_type"),
+                    place=SRPlaceType(
+                        name=hh_place.get("name"),
+                        geo=SRGeoLocationType(
+                            latitude=hh_geo.get("latitude"),
+                            longitude=hh_geo.get("longitude"),
+                        ) if hh_geo else None,
+                    ) if hh_place else None,
+                    poverty_score=hh.get("poverty_score"),
+                    poverty_score_type=hh.get("poverty_score_type"),
+                    group_size=hh.get("group_size"),
+                    member_list=members,
+                    registration_date=hh.get("registration_date"),
+                    last_updated=hh.get("last_updated"),
+                )
+
+                # -- Economic Details ----------------------------------------------
+                # Fallback to the flat root record to find things like 'income_level'
+                eco = rec.get("economic_details", rec)
+                
+                economic = SREconomicDetailsType(
+                    income_level=eco.get("income_level"),
+                    income_source=eco.get("income_source", []),
+                    asset_ownership=eco.get("asset_ownership", []),
+                    housing_type=eco.get("housing_type"),
+                    has_electricity=eco.get("has_electricity"),
+                    has_clean_water=eco.get("has_clean_water"),
+                    registration_date=eco.get("registration_date"),
+                    last_updated=eco.get("last_updated"),
+                )
+
+                # -- Benefits ------------------------------------------------------
+                benefits = [
+                    SRBenefitType(
+                        program_name=b.get("program_name"),
+                        program_code=b.get("program_code"),
+                        benefit_type=b.get("benefit_type"),
+                        enrollment_date=b.get("enrollment_date"),
+                        expiry_date=b.get("expiry_date"),
+                        status=b.get("status"),
+                        amount=b.get("amount"),
+                        currency=b.get("currency"),
+                    )
+                    for b in rec.get("benefits", [])
+                ]
+
+                records.append(SRIndividualRecordType(
+                    personal_details=personal,
+                    household_details=household,
+                    economic_details=economic,
+                    benefits=benefits,
+                    registration_date=rec.get("registration_date"),
+                    last_updated=rec.get("last_updated"),
+                ))
+
+            pag = res.get("pagination", {})
+            results.append(SRSearchResponseType(
+                reference_id=res.get("reference_id"),
+                status=res.get("status"),
+                status_reason_code=res.get("status_reason_code"),
+                status_reason_message=res.get("status_reason_message"),
+                reg_records=records,
+                pagination=SRPaginationType(
+                    page_size=pag.get("page_size"),
+                    page_number=pag.get("page_number"),
+                    total_count=pag.get("total_count"),
+                ),
+                locale=res.get("locale"),
+            ))
+
+        return SocialRegistryQueryResult(
+            transaction_id=msg.get("transaction_id"),
+            correlation_id=msg.get("correlation_id"),
+            search_response=results,
+        )
+
+    def resolve_sync_search(self, info, identifier_value):
+        import uuid, requests
+        from datetime import datetime, timezone
+
+        url = "https://partner-registry.play.openg2p.org/dci/registry/sync/search"
+        headers = {"accept": "application/json", "Content-Type": "application/json"}
+
+        current_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+        payload = {
+            "signature": "signature",
+            "header": {
+                "version": "1.0.0", "message_id": str(uuid.uuid4()),
+                "message_ts": current_time, "action": "search",
+                "sender_id": "spmis.example.org",
+                "sender_uri": "https://spmis.example.org/consumer-namespace/callback/on-search",
+                "receiver_id": "farmer.example.org",
+                "total_count": 0, "is_msg_encrypted": False, "meta": {}
+            },
+            "message": {
+                "transaction_id": str(uuid.uuid4()),
+                "search_request": [{
+                    "reference_id": str(uuid.uuid4()),
+                    "timestamp": current_time,
+                    "search_criteria": {
+                        "version": "1.0.0", "reg_type": "Farmer",
+                        "reg_record_type": "Farmer", "query_type": "expression",
+                        "query": {
+                            "type": "ns:org:QueryType:expression",
+                            "value": {"expression": {"query": {"search_text": {"$eq": identifier_value}}}}
+                        },
+                        "pagination": {"page_size": 100, "page_number": 1},
+                        "consent": {
+                            "@context": "https://schema.spdci.org/common/v1/api-schemas/Consent.jsonld",
+                            "@type": "Consent",
+                            "ts": {"$ref": "#/components/schemas/MsgHeader_V1.0.0/properties/message_ts"},
+                            "purpose": {"text": {"type": "string"}, "code": {"type": "string"}, "ref_uri": {"type": "string", "format": "uri"}}
+                        },
+                        "authorize": {
+                            "@context": "https://schema.spdci.org/common/v1/api-schemas/Authorize.jsonld",
+                            "@type": "Authorize",
+                            "ts": {"$ref": "#/components/schemas/MsgHeader_V1.0.0/properties/message_ts"},
+                            "purpose": {"text": {"type": "string"}, "code": {"type": "string"}, "ref_uri": {"type": "string", "format": "uri"}}
+                        }
+                    },
+                    "locale": "eng"
+                }]
             }
         }
 
         try:
-            response = requests.post(
-                os.getenv("REGISTRY_API_URL", "https://partner-farmer-registry-gen2.play.openg2p.org/dci/registry/sync/search"),
-                json=payload,
-                timeout=int(os.getenv("API_TIMEOUT", "30"))
-            )
-            response.raise_for_status()
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+            print(f"Status: {response.status_code} | Body: {response.text}")
+            if not response.ok:
+                print(f"API Error {response.status_code}: {response.text}")
+                return None
             data = response.json()
-        except requests.exceptions.RequestException as e:
-            # Handle connection errors or 4xx/5xx responses
-            print(f"API Error: {e}")
+        except Exception as e:
+            print(f"Request failed: {e}")
             return None
 
         msg = data.get("message", {})
         results = []
+
         for res in msg.get("search_response", []):
             data_block = res.get("data", {})
             records = []
-            
+
             for rec in data_block.get("reg_records", []):
-                # 1. Map Family Details
-                fam = rec.get("family_details", {})
-                family_obj = FamilyDetailsType(
-                    group_identifier=fam.get("group_identifier"),
-                    group_size=fam.get("group_size"),
-                    poverty_score=fam.get("poverty_score"),
-                    registration_date=fam.get("registration_date")
-                    # Add member_list mapping here if needed
+
+                # --- Personal Details ---
+                pd = rec.get("farmer_personal_details", {})  # fixed key
+                demo = pd.get("demographic_info", {})
+                raw_name = demo.get("name", {})
+
+                personal = FarmerPersonalDetailsType(
+                    member_identifier=[
+                        IdentifierType(
+                            identifier_type=i.get("identifier_type"),
+                            identifier_value=i.get("identifier_value")
+                        ) for i in pd.get("member_identifier", [])
+                    ],
+                    demographic_info=DemographicInfoType(
+                        name=NameType(
+                            given_name=raw_name.get("given_name"),
+                            second_name=raw_name.get("second_name"),
+                            surname=raw_name.get("surname"),
+                            prefix=raw_name.get("prefix"),
+                            suffix=raw_name.get("suffix"),
+                        ),
+                        sex=demo.get("sex"),
+                        birth_date=demo.get("birth_date"),
+                        phone_number=demo.get("phone_number", []),
+                        registration_date=demo.get("registration_date"),
+                        last_updated=demo.get("last_updated"),
+                    ),
+                    self_id_disability=pd.get("self_id_disability"),
+                    marital_status=pd.get("marital_status"),
+                    language_code=pd.get("language_code", []),
+                    education_level=pd.get("education_level"),
+                    registration_date=pd.get("registration_date"),
+                    last_updated=pd.get("last_updated"),
                 )
 
-                # 2. Map Farm Details (List)
-                farms = []
-                for f in rec.get("farm_details", []):
-                    farms.append(FarmDetailsType(
-                        place=f.get("place"),
-                        farming_activities=f.get("farming_activities")
+                # --- Family Details ---
+                fam = rec.get("family_details", {})
+                fam_place = fam.get("place", {})
+                fam_geo = fam_place.get("geo", {})
+
+                members = []
+                for m in fam.get("member_list", []):
+                    m_demo = m.get("demographic_info", {})
+                    m_name = m_demo.get("name", {})
+                    members.append(FamilyMemberType(
+                        member_identifier=[
+                            IdentifierType(identifier_type=i.get("identifier_type"), identifier_value=i.get("identifier_value"))
+                            for i in m.get("member_identifier", [])
+                        ],
+                        demographic_info=DemographicInfoType(
+                            name=NameType(
+                                given_name=m_name.get("given_name"),
+                                second_name=m_name.get("second_name"),
+                                surname=m_name.get("surname"),
+                                prefix=m_name.get("prefix"),
+                            ),
+                            sex=m_demo.get("sex"),
+                            birth_date=m_demo.get("birth_date"),
+                            registration_date=m_demo.get("registration_date"),
+                            last_updated=m_demo.get("last_updated"),
+                        ),
+                        self_id_disability=m.get("self_id_disability"),
+                        marital_status=m.get("marital_status"),
+                        registration_date=m.get("registration_date"),
+                        last_updated=m.get("last_updated"),
                     ))
 
-                # 3. Create the Record
+                family = FamilyDetailsType(
+                    group_identifier=[
+                        IdentifierType(identifier_type=i.get("identifier_type"), identifier_value=i.get("identifier_value"))
+                        for i in fam.get("group_identifier", [])
+                    ],
+                    group_type=fam.get("group_type"),
+                    place=PlaceType(
+                        name=fam_place.get("name"),
+                        geo=GeoLocationType(latitude=fam_geo.get("latitude"), longitude=fam_geo.get("longitude"))
+                    ),
+                    poverty_score=fam.get("poverty_score"),
+                    poverty_score_type=fam.get("poverty_score_type"),
+                    group_size=fam.get("group_size"),
+                    member_list=members,
+                    registration_date=fam.get("registration_date"),
+                    last_updated=fam.get("last_updated"),
+                )
+
+                # --- Farm Details ---
+                farms = []
+                for f in rec.get("farm_details", []):
+                    f_place = f.get("place", {})
+                    f_geo = f_place.get("geo", {})
+                    activities = []
+                    for act in f.get("farming_activities", []):
+                        crops = [
+                            CropProductionType(
+                                crop_type=c.get("crop_type"),
+                                variety=c.get("variety"),
+                                season=c.get("season"),
+                                irrigation=c.get("irrigation"),
+                                irrigation_water=c.get("irrigation_water", []),
+                                end_use=c.get("end_use", []),
+                            ) for c in act.get("crop_production", [])
+                        ]
+                        animals = [
+                            AnimalProductionType(
+                                type=a.get("type"),
+                                count=a.get("count"),
+                                livestock_system=a.get("livestock_system"),
+                            ) for a in act.get("animal_production", [])
+                        ]
+                        activities.append(FarmingActivityType(
+                            crop_production=crops,
+                            animal_production=animals,
+                            mixed_farming=act.get("mixed_farming"),
+                            agri_support_activities=act.get("agri_support_activities", []),
+                        ))
+                    farms.append(FarmDetailsType(
+                        farm_type=f.get("farm_type"),
+                        place=PlaceType(
+                            name=f_place.get("name"),
+                            geo=GeoLocationType(latitude=f_geo.get("latitude"), longitude=f_geo.get("longitude"))
+                        ),
+                        land_tenure=f.get("land_tenure"),
+                        land_size=f.get("land_size"),
+                        measurement=f.get("measurement"),
+                        farming_activities=activities,
+                        registration_date=f.get("registration_date"),
+                        last_updated=f.get("last_updated"),
+                    ))
+
                 records.append(FarmerRecordType(
-                    famer_personal_details=rec.get("famer_personal_details"),
-                    family_details=family_obj,
+                    farmer_personal_details=personal,
+                    family_details=family,
                     farm_details=farms,
                     registration_date=rec.get("registration_date"),
-                    last_updated=rec.get("last_updated")
+                    last_updated=rec.get("last_updated"),
                 ))
 
+            pag = res.get("pagination", {})
             results.append(SearchResponseType(
                 reference_id=res.get("reference_id"),
                 status=res.get("status"),
+                status_reason_code=res.get("status_reason_code"),
+                status_reason_message=res.get("status_reason_message"),
                 reg_records=records,
-                pagination=res.get("pagination")
+                pagination=PaginationType(
+                    page_size=pag.get("page_size"),
+                    page_number=pag.get("page_number"),
+                    total_count=pag.get("total_count"),
+                ),
+                locale=res.get("locale"),
             ))
 
         return CRVSQueryResult(
+            transaction_id=msg.get("transaction_id"),
+            correlation_id=msg.get("correlation_id"),
             search_response=results,
-            transaction_id=msg.get("transaction_id")
         )
     can_add_insuree = graphene.Field(
         graphene.List(graphene.String),

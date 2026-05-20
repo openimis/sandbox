@@ -251,18 +251,19 @@ class InsureeMutationGQLType(DjangoObjectType):
 
 
 
-# --- 1. Basic Shared Types ---
+import graphene
+
+# --- Shared Base Types ---
 class IdentifierType(graphene.ObjectType):
     identifier_type = graphene.String()
     identifier_value = graphene.String()
 
 class NameType(graphene.ObjectType):
-    # API uses a mix of these; defining both ensures data is captured
-    first_name = graphene.String()
-    last_name = graphene.String()
     given_name = graphene.String()
+    second_name = graphene.String()
     surname = graphene.String()
     prefix = graphene.String()
+    suffix = graphene.String()
 
 class GeoLocationType(graphene.ObjectType):
     latitude = graphene.Float()
@@ -272,33 +273,54 @@ class PlaceType(graphene.ObjectType):
     name = graphene.String()
     geo = graphene.Field(GeoLocationType)
 
-# --- 2. Family & Member Details ---
-class MemberDemographicType(graphene.ObjectType):
+# --- Demographic ---
+class DemographicInfoType(graphene.ObjectType):
     name = graphene.Field(NameType)
     sex = graphene.String()
     birth_date = graphene.String()
+    phone_number = graphene.List(graphene.String)
     registration_date = graphene.String()
+    last_updated = graphene.String()
 
+# --- Farmer Personal ---
+class FarmerPersonalDetailsType(graphene.ObjectType):
+    member_identifier = graphene.List(IdentifierType)
+    demographic_info = graphene.Field(DemographicInfoType)
+    self_id_disability = graphene.Boolean()
+    marital_status = graphene.String()
+    language_code = graphene.List(graphene.String)
+    education_level = graphene.String()
+    registration_date = graphene.String()
+    last_updated = graphene.String()
+
+# --- Family ---
 class FamilyMemberType(graphene.ObjectType):
     member_identifier = graphene.List(IdentifierType)
-    demographic_info = graphene.Field(MemberDemographicType)
-    is_disabled = graphene.Boolean()
+    demographic_info = graphene.Field(DemographicInfoType)
+    self_id_disability = graphene.Boolean()
     marital_status = graphene.String()
+    registration_date = graphene.String()
+    last_updated = graphene.String()
 
 class FamilyDetailsType(graphene.ObjectType):
     group_identifier = graphene.List(IdentifierType)
     group_type = graphene.String()
-    poverty_score = graphene.String()
+    place = graphene.Field(PlaceType)
+    poverty_score = graphene.Float()
+    poverty_score_type = graphene.String()
     group_size = graphene.Int()
     member_list = graphene.List(FamilyMemberType)
     registration_date = graphene.String()
+    last_updated = graphene.String()
 
-# --- 3. Farm & Activity Details ---
+# --- Farm & Activities ---
 class CropProductionType(graphene.ObjectType):
     crop_type = graphene.String()
     variety = graphene.String()
     season = graphene.String()
     irrigation = graphene.Boolean()
+    irrigation_water = graphene.List(graphene.String)
+    end_use = graphene.List(graphene.String)
 
 class AnimalProductionType(graphene.ObjectType):
     type = graphene.String()
@@ -309,30 +331,27 @@ class FarmingActivityType(graphene.ObjectType):
     crop_production = graphene.List(CropProductionType)
     animal_production = graphene.List(AnimalProductionType)
     mixed_farming = graphene.Boolean()
+    agri_support_activities = graphene.List(graphene.String)
 
 class FarmDetailsType(graphene.ObjectType):
+    farm_type = graphene.String()
     place = graphene.Field(PlaceType)
+    land_tenure = graphene.String()
+    land_size = graphene.Float()
+    measurement = graphene.String()
     farming_activities = graphene.List(FarmingActivityType)
+    registration_date = graphene.String()
+    last_updated = graphene.String()
 
-# --- 4. Personal Details & Record ---
-class DemographicInfoType(graphene.ObjectType):
-    name = graphene.Field(NameType)
-    gender = graphene.String()
-    date_of_birth = graphene.String()
-
-class FarmerPersonalDetailsType(graphene.ObjectType):
-    member_identifier = graphene.Field(IdentifierType)
-    demographic_info = graphene.Field(DemographicInfoType)
-
+# --- Record ---
 class FarmerRecordType(graphene.ObjectType):
-    # Note: 'famer' (one 'r') matches the API response key
-    famer_personal_details = graphene.Field(FarmerPersonalDetailsType)
+    farmer_personal_details = graphene.Field(FarmerPersonalDetailsType)  # fixed spelling
     family_details = graphene.Field(FamilyDetailsType)
     farm_details = graphene.List(FarmDetailsType)
     registration_date = graphene.String()
     last_updated = graphene.String()
 
-# --- 5. Wrapper Types ---
+# --- Wrappers ---
 class PaginationType(graphene.ObjectType):
     page_size = graphene.Int()
     page_number = graphene.Int()
@@ -341,7 +360,6 @@ class PaginationType(graphene.ObjectType):
 class SearchResponseType(graphene.ObjectType):
     reference_id = graphene.String()
     status = graphene.String()
-    # Ensure these are defined so Graphene can map them
     status_reason_code = graphene.String()
     status_reason_message = graphene.String()
     reg_records = graphene.List(FarmerRecordType)
@@ -352,3 +370,130 @@ class CRVSQueryResult(graphene.ObjectType):
     transaction_id = graphene.String()
     correlation_id = graphene.String()
     search_response = graphene.List(SearchResponseType)
+
+
+
+class SRIdentifierType(graphene.ObjectType):
+    identifier_type  = graphene.String()
+    identifier_value = graphene.String()
+ 
+class SRNameType(graphene.ObjectType):
+    given_name  = graphene.String()
+    second_name = graphene.String()
+    surname     = graphene.String()
+    prefix      = graphene.String()
+    suffix      = graphene.String()
+ 
+class SRGeoLocationType(graphene.ObjectType):
+    latitude  = graphene.Float()
+    longitude = graphene.Float()
+ 
+class SRPlaceType(graphene.ObjectType):
+    name = graphene.String()
+    geo  = graphene.Field(SRGeoLocationType)
+ 
+# ─────────────────────────────────────────────
+# INDIVIDUAL PERSONAL DETAILS
+# ─────────────────────────────────────────────
+ 
+class SRDemographicInfoType(graphene.ObjectType):
+    name              = graphene.Field(SRNameType)
+    sex               = graphene.String()
+    birth_date        = graphene.String()
+    phone_number      = graphene.List(graphene.String)
+    email             = graphene.String()
+    registration_date = graphene.String()
+    last_updated      = graphene.String()
+ 
+class SRPersonalDetailsType(graphene.ObjectType):
+    member_identifier  = graphene.List(SRIdentifierType)
+    demographic_info   = graphene.Field(SRDemographicInfoType)
+    self_id_disability = graphene.Boolean()
+    marital_status     = graphene.String()
+    language_code      = graphene.List(graphene.String)
+    education_level    = graphene.String()
+    registration_date  = graphene.String()
+    last_updated       = graphene.String()
+ 
+# ─────────────────────────────────────────────
+# HOUSEHOLD / FAMILY DETAILS
+# ─────────────────────────────────────────────
+ 
+class SRHouseholdMemberType(graphene.ObjectType):
+    member_identifier  = graphene.List(SRIdentifierType)
+    demographic_info   = graphene.Field(SRDemographicInfoType)
+    self_id_disability = graphene.Boolean()
+    marital_status     = graphene.String()
+    registration_date  = graphene.String()
+    last_updated       = graphene.String()
+ 
+class SRHouseholdDetailsType(graphene.ObjectType):
+    group_identifier   = graphene.List(SRIdentifierType)
+    group_type         = graphene.String()
+    place              = graphene.Field(SRPlaceType)
+    poverty_score      = graphene.Float()
+    poverty_score_type = graphene.String()
+    group_size         = graphene.Int()
+    member_list        = graphene.List(SRHouseholdMemberType)
+    registration_date  = graphene.String()
+    last_updated       = graphene.String()
+ 
+# ─────────────────────────────────────────────
+# PROGRAM / BENEFIT DETAILS
+# (social registry specific — not in farmer registry)
+# ─────────────────────────────────────────────
+ 
+class SRBenefitType(graphene.ObjectType):
+    program_name      = graphene.String()
+    program_code      = graphene.String()
+    benefit_type      = graphene.String()
+    enrollment_date   = graphene.String()
+    expiry_date       = graphene.String()
+    status            = graphene.String()
+    amount            = graphene.Float()
+    currency          = graphene.String()
+ 
+class SREconomicDetailsType(graphene.ObjectType):
+    income_level      = graphene.String()
+    income_source     = graphene.List(graphene.String)
+    asset_ownership   = graphene.List(graphene.String)
+    housing_type      = graphene.String()
+    has_electricity   = graphene.Boolean()
+    has_clean_water   = graphene.Boolean()
+    registration_date = graphene.String()
+    last_updated      = graphene.String()
+ 
+# ─────────────────────────────────────────────
+# RECORD WRAPPER
+# ─────────────────────────────────────────────
+ 
+class SRIndividualRecordType(graphene.ObjectType):
+    personal_details   = graphene.Field(SRPersonalDetailsType)
+    household_details  = graphene.Field(SRHouseholdDetailsType)
+    economic_details   = graphene.Field(SREconomicDetailsType)
+    benefits           = graphene.List(SRBenefitType)
+    registration_date  = graphene.String()
+    last_updated       = graphene.String()
+ 
+# ─────────────────────────────────────────────
+# PAGINATION & RESPONSE WRAPPERS
+# ─────────────────────────────────────────────
+ 
+class SRPaginationType(graphene.ObjectType):
+    page_size   = graphene.Int()
+    page_number = graphene.Int()
+    total_count = graphene.Int()
+ 
+class SRSearchResponseType(graphene.ObjectType):
+    reference_id          = graphene.String()
+    status                = graphene.String()
+    status_reason_code    = graphene.String()
+    status_reason_message = graphene.String()
+    reg_records           = graphene.List(SRIndividualRecordType)
+    pagination            = graphene.Field(SRPaginationType)
+    locale                = graphene.String()
+ 
+class SocialRegistryQueryResult(graphene.ObjectType):
+    transaction_id  = graphene.String()
+    correlation_id  = graphene.String()
+    search_response = graphene.List(SRSearchResponseType)
