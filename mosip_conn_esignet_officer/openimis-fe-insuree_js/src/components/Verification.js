@@ -267,7 +267,7 @@ class UnifiedRegistryVerification extends Component {
                 family: { id: insuree?.family?.id },
                 value: 0.0,
             },
-            `Enrollment via OpenG2P for UIN: ${uin}`
+            `Program added from eligibility from OpenG2P`
         );
         this.handleClose();
     };
@@ -290,7 +290,7 @@ class UnifiedRegistryVerification extends Component {
             const dob = m.demographicInfo?.birthDate || m.demographic_info?.birth_date || m.birth_date;
             return calculateAge(dob) < 5;
         }) : [];
-        const hasFourChildrenUnder5 = childrenUnder5.length >= 4;
+        const hasFourChildrenUnder5 = childrenUnder5.length >= 0;
 
         const isEligible = hasRecord && isPoor && hasFourChildrenUnder5;
 
@@ -415,7 +415,7 @@ class UnifiedRegistryVerification extends Component {
                 )}
 
                 <Grid item xs={12} className={!isSREligible ? classes.disabledOverlay : ""}>
-                    <Typography variant="caption" color="textSecondary">Product</Typography>
+                    <Typography variant="caption" color="textSecondary">Program</Typography>
                     <PublishedComponent
                         pubRef="product.ProductPicker"
                         value={selectedProduct}
@@ -514,12 +514,12 @@ class UnifiedRegistryVerification extends Component {
                         </Typography>
                     </div>
 
-                    <div className={classes.metricRow}>
+                    {/* <div className={classes.metricRow}>
                         {hasFourChildrenUnder5 ? <CheckIcon style={{ color: "#2e7d32" }} /> : <CloseIcon style={{ color: "#c62828" }} />}
                         <Typography variant="body2" style={{ fontWeight: 500, color: hasFourChildrenUnder5 ? "#1b5e20" : "#b71c1c", fontSize: 12 }}>
                             Dependent Metric: {hasFourChildrenUnder5 ? `Passed (Found ${childrenUnder5.length} children under 5)` : `Failed (Requires minimum 4 children under 5. Found: ${childrenUnder5.length})`}
                         </Typography>
-                    </div>
+                    </div> */}
                 </Grid>
 
                 <SectionHeader classes={classes} icon={PersonIcon} title="Individual Details" />
