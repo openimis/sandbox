@@ -5,7 +5,7 @@ http:
       entryPoints: [https]
       service: openspp
       tls:
-    certResolver: letsencrypt
+        certResolver: letsencrypt
 
     bahmni:
       rule: Host(`bahmni.s2.openimis.org`)
@@ -29,9 +29,23 @@ http:
         certResolver: letsencrypt
 
     openimisdev:
-      rule: Host(`openimisdev.s2.openimis.org`)
+      rule: Host(`devopenimis.s2.openimis.org`)
       entryPoints: [https]
       service: openimisdev
+      tls:
+        certResolver: letsencrypt
+
+    docopenimisfhir:
+      rule: Host(`fhirdoc.s2.openimis.org`)
+      entryPoints: [https]
+      service: docopenimis
+      tls:
+       	certResolver: letsencrypt
+
+    docopenimisdci:
+      rule: Host(`dcidoc.s2.openimis.org`)
+      entryPoints: [https]
+      service: docopenimis
       tls:
         certResolver: letsencrypt
 
@@ -88,7 +102,12 @@ http:
     openimisdev:
       loadBalancer:
         servers:
-          - url: http://192.168.11.230:81
+          - url: http://192.168.11.81:80
+
+    docopenimis:
+      loadBalancer:
+        servers:
+          - url: http://192.168.11.82:80
 
     openhimconsole:
       loadBalancer:
