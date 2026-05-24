@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>openIMIS · Interoperability Sandbox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        html { scroll-behavior: smooth; }
+        section { scroll-margin-top: 5rem; }
+
+        .integration-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .integration-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 36px rgba(37, 99, 235, 0.10), 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .sidebar-link { transition: all 0.15s ease; }
+        .sidebar-link.active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-right: 3px solid #2563eb;
+            font-weight: 600;
+        }
+
+        .logo-fallback {
+            display: none;
+            font-size: 11px;
+            font-weight: 700;
+            color: #475569;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: #f1f5f9;
+            padding: 3px 8px;
+            border-radius: 5px;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* CHT logo is white-on-transparent — display on dark tile */
+        .cht-logo-tile {
+            background: #1a3a2a;
+            border-radius: 8px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ecosystem-chip { transition: all 0.15s ease; }
+        .ecosystem-chip:hover {
+            background-color: #eff6ff;
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
+        .hero-bg {
+            background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 60%, #f8fafc 100%);
+        }
+
+        /* Badge pills */
+        .badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 9999px; font-size: 10px; font-weight: 700; letter-spacing: 0.02em; }
+        .badge-fhir    { background: #dbeafe; color: #1d4ed8; }
+        .badge-dci     { background: #ede9fe; color: #6d28d9; }
+        .badge-oidc    { background: #ccfbf1; color: #0f766e; }
+        .badge-openhie { background: #e0e7ff; color: #4338ca; }
+        .badge-eclaim  { background: #dcfce7; color: #15803d; }
+        .badge-spmis   { background: #fef3c7; color: #b45309; }
+        .badge-reg     { background: #ffe4e6; color: #be123c; }
+        .badge-done    { background: #dcfce7; color: #15803d; }
+        .badge-wip     { background: #fef3c7; color: #b45309; }
+
+        /* Partner banner inside cards */
+        .partner-banner {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+        }
+        .partner-logo-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .partner-logo-block span.pname {
+            font-size: 10px;
+            font-weight: 600;
+            color: #64748b;
+            letter-spacing: 0.03em;
+            text-align: center;
+            max-width: 90px;
+        }
+        .partner-divider {
+            font-size: 20px;
+            color: #cbd5e1;
+            font-weight: 300;
+            margin-bottom: 14px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="bg-white text-slate-900 antialiased" x-data="app()" @scroll.window="onScroll()">
+
+<!-- ═══════ FIXED HEADER ═══════ -->
+<header class="fixed top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-slate-200">
+    <div class="flex items-center justify-between h-14 px-4 lg:px-6">
+        <div class="flex items-center gap-3">
+            <button @click="mobileOpen = !mobileOpen" class="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-500">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <img src="https://openimis.org/themes/custom/ffw/logo.svg" alt="openIMIS" class="h-7"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex'">
+            <span style="display:none" class="items-center font-extrabold text-blue-600 text-sm">openIMIS</span>
+            <div class="hidden sm:flex items-center gap-2 ml-1">
+                <div class="h-5 w-px bg-slate-200"></div>
+                <span class="text-sm font-semibold text-slate-700">Interoperability Sandbox</span>
+                <span class="badge" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">2024.T4 · GIZ</span>
+            </div>
+        </div>
+        <a href="https://openimis.atlassian.net/wiki/spaces/OP/pages/4059955305/Project+2024.T4+Sandbox+Setup"
+           target="_blank" rel="noopener"
+           class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Project Wiki
+        </a>
+    </div>
+</header>
+
+<div x-show="mobileOpen" @click="mobileOpen=false"
+     class="fixed inset-0 z-30 bg-slate-900/30 lg:hidden"
+     x-transition:enter="transition ease-out duration-150"
+     x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-100"
+     x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+</div>
+
+<div class="flex pt-14">
+
+<!-- ═══════ LEFT SIDEBAR ═══════ -->
+<aside :class="mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+       class="fixed left-0 top-14 z-40 w-60 h-[calc(100vh-3.5rem)] bg-white border-r border-slate-100 overflow-y-auto transition-transform duration-200 ease-in-out">
+    <div class="p-4 pt-6">
+        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3">FHIR Interoperability</p>
+        <nav class="space-y-0.5 mb-5">
+            <a href="#fhir" @click="mobileOpen=false" :class="active==='fhir' ? 'active' : 'text-slate-600 hover:bg-slate-50'" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-l-lg text-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></span>Overview
+            </a>
+            <a href="#medic" @click="mobileOpen=false" :class="active==='medic' ? 'active' : 'text-slate-600 hover:bg-slate-50'" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-l-lg text-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-200 flex-shrink-0"></span>Medic / CHT
+            </a>
+            <a href="#bahmni" @click="mobileOpen=false" :class="active==='bahmni' ? 'active' : 'text-slate-600 hover:bg-slate-50'" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-l-lg text-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-200 flex-shrink-0"></span>BAHMNI
+            </a>
+            <a href="#openhim" @click="mobileOpen=false" :class="active==='openhim' ? 'active' : 'text-slate-600 hover:bg-slate-50'" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-l-lg text-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-200 flex-shrink-0"></span>openHIM
+            </a>
+        </nav>
+        <div class="border-t border-slate-100 mb-5"></div>
+        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3">DCI / Social Registry</p>
+        <nav class="space-y-0.5">
+            <a href="#dci" @click="mobileOpen=false" :class="active==='dci' ? 'active' : 'text-slate-600 hover:bg-slate-50'" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-l-lg text-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-violet-500 flex-shrink-0"></span>Overview
+            </a>
+            <a href="#mosip" @click="mobileOpen=false" :class="active==='mosip' ? 'active' : 'text-slate-600 hover:bg-slate-50'" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-l-lg text-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-violet-200 flex-shrink-0"></span>MOSIP
+            </a>
+            <a href="#openg2p" @click="mobileOpen=false" :class="active==='openg2p' ? 'active' : 'text-slate-600 hover:bg-slate-50'" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-l-lg text-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-violet-200 flex-shrink-0"></span>openG2P
+            </a>
+            <a href="#registry" @click="mobileOpen=false" :class="active==='registry' ? 'active' : 'text-slate-600 hover:bg-slate-50'" class="sidebar-link flex items-center gap-2.5 px-3 py-2 rounded-l-lg text-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-violet-200 flex-shrink-0"></span>Social Registry
+            </a>
+        </nav>
+    </div>
+</aside>
+
+<!-- ═══════ MAIN CONTENT ═══════ -->
+<main class="flex-1 lg:ml-60 min-h-screen">
+
+    <!-- HERO -->
+    <div class="hero-bg border-b border-slate-100 px-6 py-12 lg:px-14 lg:py-16">
+        <div class="max-w-3xl">
+            <div class="flex flex-wrap items-center gap-2 mb-5">
+                <span class="badge" style="background:#2563eb;color:#fff;font-size:11px;padding:3px 10px;">2024.T4</span>
+                <span class="badge" style="background:#fff;color:#475569;border:1px solid #e2e8f0;font-size:11px;padding:3px 10px;">GIZ Initiative</span>
+                <span class="badge" style="background:#fff;color:#475569;border:1px solid #e2e8f0;font-size:11px;padding:3px 10px;">OpenHIE · GovStack · DCI</span>
+            </div>
+            <h2 class="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4">
+                openIMIS Interoperability<br class="hidden lg:block"> Sandbox
+            </h2>
+            <p class="text-base text-slate-600 leading-relaxed mb-8 max-w-2xl">
+                A GIZ-led initiative to demonstrate and validate real-world interoperability between openIMIS and digital public goods, aligned with OpenHIE, GovStack, and DCI standards. This sandbox proves that open-source social protection software can seamlessly exchange data with national health, identity, and social registry platforms.
+            </p>
+            <div class="flex flex-wrap gap-3">
+                <a href="https://openimis.atlassian.net/wiki/spaces/OP/pages/4059955305/Project+2024.T4+Sandbox+Setup"
+                   target="_blank" rel="noopener"
+                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Project Wiki
+                </a>
+                <a href="#fhir" class="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-slate-700 text-sm font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition-all">
+                    Explore Integrations
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </a>
+            </div>
+            <div class="flex flex-wrap items-center gap-6 mt-10 pt-8 border-t border-slate-200">
+                <div><div class="text-2xl font-black text-slate-900">6</div><div class="text-xs text-slate-500 font-medium">Integrations</div></div>
+                <div class="w-px h-8 bg-slate-200"></div>
+                <div><div class="text-2xl font-black text-slate-900">5</div><div class="text-xs text-slate-500 font-medium">Partner Systems</div></div>
+                <div class="w-px h-8 bg-slate-200"></div>
+                <div><div class="text-xl font-black text-blue-600">FHIR R4</div><div class="text-xs text-slate-500 font-medium">Primary Standard</div></div>
+                <div class="w-px h-8 bg-slate-200"></div>
+                <div><div class="text-xl font-black text-violet-600">DCI/SPDCI</div><div class="text-xs text-slate-500 font-medium">Registry Standard</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-6 py-10 lg:px-14 max-w-4xl">
+
+        <!-- ══════ SECTION 1: FHIR ══════ -->
+        <section id="fhir" class="mb-6">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600 shadow-sm flex-shrink-0">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                </div>
+                <div>
+                    <div class="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Section 1</div>
+                    <h2 class="text-xl font-bold text-slate-900">FHIR Interoperability</h2>
+                </div>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed mb-8 pl-12">
+                openIMIS implements FHIR R4 as its primary interoperability standard, enabling seamless data exchange with EMR/EHR systems, community health tools, and national health infrastructure.
+            </p>
+        </section>
+
+        <!-- ─── Card 1: Medic / CHT ─── -->
+        <section id="medic" class="mb-5">
+            <div class="integration-card bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-1 bg-blue-600"></div>
+                <!-- Partner Banner -->
+                <div class="partner-banner">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">DPG Partners</p>
+                    <div class="flex items-center gap-5 flex-wrap">
+                        <!-- CHT -->
+                        <div class="partner-logo-block">
+                            <div class="cht-logo-tile">
+                                <img src="https://images.squarespace-cdn.com/content/v1/5bd25eea65a707ad54c1e8ca/ac67c472-8a10-4884-8b75-d2d952a3afba/CHT_Final_Horizontal_Light.png?format=1500w"
+                                     alt="Community Health Toolkit" class="h-8 object-contain w-auto max-w-[130px]"
+                                     onerror="this.parentElement.style.display='none'; document.getElementById('cht-fallback').style.display='flex'">
+                            </div>
+                            <span id="cht-fallback" style="display:none" class="logo-fallback">CHT</span>
+                            <span class="pname">Community Health Toolkit</span>
+                        </div>
+                        <div class="partner-divider">↔</div>
+                        <!-- openIMIS -->
+                        <div class="partner-logo-block">
+                            <img src="https://openimis.org/themes/custom/ffw/logo.svg" alt="openIMIS" class="h-9 object-contain w-auto max-w-[110px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">openIMIS</span>
+                            <span class="pname">openIMIS</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Card Body -->
+                <div class="p-6">
+                    <div class="flex flex-wrap gap-1.5 mb-2">
+                        <span class="badge badge-fhir">FHIR R4</span>
+                        <span class="badge badge-done">✓ Completed</span>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900 mb-3">openIMIS ↔ Medic / CHT</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed mb-5">
+                        Enable community health workers using Medic/CHT to submit care feedback and trigger claim subscriptions directly into openIMIS via FHIR, closing the loop between last-mile care delivery and health insurance processing.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="https://openimis.atlassian.net/wiki/spaces/OP/pages/4441997348/Medic+CHT+Feedback+-+Claim+Subscription+openIMIS+Interoperability"
+                           target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Documentation →
+                        </a>
+                        <button disabled class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Live Demo (coming soon)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── Card 2: BAHMNI ─── -->
+        <section id="bahmni" class="mb-5">
+            <div class="integration-card bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-1 bg-blue-600"></div>
+                <div class="partner-banner">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">DPG Partners</p>
+                    <div class="flex items-center gap-5 flex-wrap">
+                        <!-- BAHMNI -->
+                        <div class="partner-logo-block">
+                            <img src="https://www.bahmni.org/wp-content/themes/bahmni/images/bahmni-logo.png" alt="BAHMNI" class="h-10 object-contain w-auto max-w-[100px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">BAHMNI</span>
+                            <span class="pname">BAHMNI</span>
+                        </div>
+                        <!-- OpenMRS -->
+                        <div class="partner-logo-block">
+                            <img src="https://openmrs.org/wp-content/themes/openmrs-theme/images/openmrs-logo-updated.svg" alt="OpenMRS" class="h-9 object-contain w-auto max-w-[100px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">OpenMRS</span>
+                            <span class="pname">OpenMRS</span>
+                        </div>
+                        <!-- Odoo -->
+                        <div class="partner-logo-block">
+                            <img src="https://odoocdn.com/openerp_website/static/src/img/logos/odoo_logo.svg" alt="Odoo" class="h-9 object-contain w-auto max-w-[80px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">Odoo</span>
+                            <span class="pname">Odoo</span>
+                        </div>
+                        <div class="partner-divider">↔</div>
+                        <!-- openIMIS -->
+                        <div class="partner-logo-block">
+                            <img src="https://openimis.org/themes/custom/ffw/logo.svg" alt="openIMIS" class="h-9 object-contain w-auto max-w-[110px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">openIMIS</span>
+                            <span class="pname">openIMIS</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex flex-wrap gap-1.5 mb-2">
+                        <span class="badge badge-fhir">FHIR R4</span>
+                        <span class="badge badge-eclaim">eClaiming</span>
+                        <span class="badge badge-done">✓ Completed</span>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900 mb-0.5">openIMIS ↔ BAHMNI</h3>
+                    <p class="text-xs text-slate-400 mb-3">OpenMRS + Odoo</p>
+                    <p class="text-sm text-slate-600 leading-relaxed mb-5">
+                        Demonstrate a complete eClaiming workflow where patient encounters recorded in BAHMNI (OpenMRS for clinical, Odoo for billing) are automatically transformed and submitted as FHIR Claims to openIMIS, eliminating manual claim entry at health facilities.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="https://openimis.atlassian.net/wiki/spaces/OP/pages/4467785733/BAHMNI+openIMIS+-+eClaiming+Workflow"
+                           target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Documentation →
+                        </a>
+                        <button disabled class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Live Demo (coming soon)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── Card 3: openHIM ─── -->
+        <section id="openhim" class="mb-8">
+            <div class="integration-card bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-1 bg-blue-600"></div>
+                <div class="partner-banner">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">DPG Partners</p>
+                    <div class="flex items-center gap-5 flex-wrap">
+                        <!-- openHIM -->
+                        <div class="partner-logo-block">
+                            <img src="http://openhim.org/img/openhim-logo.svg" alt="openHIM" class="h-10 object-contain w-auto max-w-[110px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback" style="display:none">openHIM</span>
+                            <!-- Styled fallback rendered by default since the domain may be unreachable -->
+                            <span class="pname">openHIM</span>
+                        </div>
+                        <div class="partner-divider">↔</div>
+                        <!-- openIMIS -->
+                        <div class="partner-logo-block">
+                            <img src="https://openimis.org/themes/custom/ffw/logo.svg" alt="openIMIS" class="h-9 object-contain w-auto max-w-[110px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">openIMIS</span>
+                            <span class="pname">openIMIS</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex flex-wrap gap-1.5 mb-2">
+                        <span class="badge badge-fhir">FHIR R4</span>
+                        <span class="badge badge-openhie">OpenHIE</span>
+                        <span class="badge badge-done">✓ Completed</span>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900 mb-3">openIMIS ↔ openHIM</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed mb-5">
+                        Deploy openHIM as a FHIR mediator layer between openIMIS and external systems (MFL, MPI, EMRs), providing centralized routing, validation, audit logging, and transformation of FHIR resources. The eClaiming documentation was specifically prepared to simplify integration patterns for any EMR/EHR connecting to openIMIS.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="https://openimis.atlassian.net/wiki/spaces/OP/pages/4338810896/Workflows+Implementation"
+                           target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Documentation →
+                        </a>
+                        <button disabled class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Live Demo (coming soon)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FHIR Architecture Diagram -->
+        <div class="mb-16 bg-slate-50 border border-slate-200 rounded-xl p-6">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-5 text-center">FHIR Architecture — openHIM as Central Mediator</p>
+            <div class="overflow-x-auto">
+                <svg viewBox="0 0 660 160" class="w-full max-w-2xl mx-auto" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <marker id="ah1" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#93c5fd"/></marker>
+                        <marker id="ah2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#2563eb"/></marker>
+                    </defs>
+                    <rect x="8" y="24" width="118" height="42" rx="7" fill="white" stroke="#93c5fd" stroke-width="1.5"/>
+                    <text x="67" y="41" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="#1e3a8a">Medic / CHT</text>
+                    <text x="67" y="55" text-anchor="middle" font-family="Inter,sans-serif" font-size="8" fill="#64748b">Community Health</text>
+                    <rect x="8" y="90" width="118" height="42" rx="7" fill="white" stroke="#93c5fd" stroke-width="1.5"/>
+                    <text x="67" y="107" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="#1e3a8a">BAHMNI</text>
+                    <text x="67" y="121" text-anchor="middle" font-family="Inter,sans-serif" font-size="8" fill="#64748b">EMR + Billing</text>
+                    <path d="M128 45 Q 185 45 238 85" stroke="#93c5fd" stroke-width="1.5" fill="none" marker-end="url(#ah1)"/>
+                    <path d="M128 111 Q 185 111 238 100" stroke="#93c5fd" stroke-width="1.5" fill="none" marker-end="url(#ah1)"/>
+                    <text x="185" y="60" text-anchor="middle" font-family="Inter,sans-serif" font-size="7.5" fill="#3b82f6" font-weight="600">FHIR R4</text>
+                    <text x="185" y="108" text-anchor="middle" font-family="Inter,sans-serif" font-size="7.5" fill="#3b82f6" font-weight="600">FHIR R4</text>
+                    <rect x="244" y="62" width="148" height="54" rx="8" fill="#2563eb"/>
+                    <text x="318" y="84" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="800" fill="white">openHIM</text>
+                    <text x="318" y="101" text-anchor="middle" font-family="Inter,sans-serif" font-size="7.5" fill="#bfdbfe">Mediator · Routing · Audit</text>
+                    <path d="M394 89 L 490 89" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#ah2)"/>
+                    <text x="442" y="82" text-anchor="middle" font-family="Inter,sans-serif" font-size="7.5" fill="#2563eb" font-weight="600">FHIR Claims</text>
+                    <rect x="492" y="62" width="148" height="54" rx="8" fill="white" stroke="#2563eb" stroke-width="2"/>
+                    <text x="566" y="84" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="800" fill="#1e3a8a">openIMIS</text>
+                    <text x="566" y="101" text-anchor="middle" font-family="Inter,sans-serif" font-size="7.5" fill="#64748b">Health Insurance MIS</text>
+                </svg>
+            </div>
+        </div>
+
+        <!-- ══════ SECTION 2: DCI ══════ -->
+        <section id="dci" class="mb-6">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="flex items-center justify-center w-9 h-9 rounded-lg bg-violet-600 shadow-sm flex-shrink-0">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <div>
+                    <div class="text-[10px] font-bold text-violet-500 uppercase tracking-widest">Section 2</div>
+                    <h2 class="text-xl font-bold text-slate-900">DCI / Social Registry Interoperability</h2>
+                </div>
+            </div>
+            <p class="text-sm text-slate-600 leading-relaxed mb-6 pl-12">
+                openIMIS implements the Digital Convergence Initiative (DCI/SPDCI) standard to interoperate with social protection ecosystems. openIMIS plays dual roles: as an SP-MIS querying external registries, and as a registry exposing its own beneficiary data. This sandbox is part of a broader ecosystem involving openCRVS, MOSIP, openG2P, openSPP, and openIMIS.
+            </p>
+            <!-- DCI Ecosystem Banner -->
+            <div class="pl-12 mb-8">
+                <div class="inline-block bg-violet-50 border border-violet-100 rounded-xl p-4">
+                    <p class="text-[9px] font-black text-violet-400 uppercase tracking-widest mb-3">DCI Ecosystem Partners</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="ecosystem-chip inline-flex items-center px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 cursor-default">openCRVS</span>
+                        <span class="ecosystem-chip inline-flex items-center px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 cursor-default">MOSIP</span>
+                        <span class="ecosystem-chip inline-flex items-center px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 cursor-default">openG2P</span>
+                        <span class="ecosystem-chip inline-flex items-center px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 cursor-default">openSPP</span>
+                        <span class="inline-flex items-center px-3 py-1.5 bg-blue-600 border border-blue-600 rounded-lg text-xs font-semibold text-white cursor-default">openIMIS</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── Card 4: MOSIP ─── -->
+        <section id="mosip" class="mb-5">
+            <div class="integration-card bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-1 bg-violet-600"></div>
+                <div class="partner-banner">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">DPG Partners</p>
+                    <div class="flex items-center gap-5 flex-wrap">
+                        <!-- MOSIP -->
+                        <div class="partner-logo-block">
+                            <img src="https://www.mosip.io/images/mosipn-logo.png" alt="MOSIP" class="h-10 object-contain w-auto max-w-[120px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">MOSIP</span>
+                            <span class="pname">MOSIP</span>
+                        </div>
+                        <div class="partner-divider">↔</div>
+                        <!-- openIMIS -->
+                        <div class="partner-logo-block">
+                            <img src="https://openimis.org/themes/custom/ffw/logo.svg" alt="openIMIS" class="h-9 object-contain w-auto max-w-[110px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">openIMIS</span>
+                            <span class="pname">openIMIS</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex flex-wrap gap-1.5 mb-2">
+                        <span class="badge badge-dci">DCI/SPDCI</span>
+                        <span class="badge badge-oidc">OIDC</span>
+                        <span class="badge badge-done">✓ Completed</span>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900 mb-3">openIMIS ↔ MOSIP</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed mb-5">
+                        Integrate MOSIP's foundational identity platform (via eSignet/OIDC) into the openIMIS enrollment workflow. Health insurance staff verify beneficiary identity in real time against the national ID registry, with verified attributes (name, DOB, photo) automatically populating the insuree record.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="https://openimis.atlassian.net/wiki/spaces/OP/pages/4442030194/MOSIP+openIMIS+Insuree+Information+Collection+Workflows"
+                           target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Documentation →
+                        </a>
+                        <button disabled class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Live Demo (coming soon)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── Card 5: openG2P ─── -->
+        <section id="openg2p" class="mb-5">
+            <div class="integration-card bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-1 bg-violet-600"></div>
+                <div class="partner-banner">
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">DPG Partners</p>
+                    <div class="flex items-center gap-5 flex-wrap">
+                        <!-- openG2P -->
+                        <div class="partner-logo-block">
+                            <img src="https://www.openg2p.org/wp-content/uploads/2022/08/openg2p-logo.png" alt="openG2P" class="h-10 object-contain w-auto max-w-[120px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">openG2P</span>
+                            <span class="pname">openG2P</span>
+                        </div>
+                        <div class="partner-divider">↔</div>
+                        <!-- openIMIS -->
+                        <div class="partner-logo-block">
+                            <img src="https://openimis.org/themes/custom/ffw/logo.svg" alt="openIMIS" class="h-9 object-contain w-auto max-w-[110px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">openIMIS</span>
+                            <span class="pname">openIMIS</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex flex-wrap gap-1.5 mb-2">
+                        <span class="badge badge-dci">DCI/SPDCI</span>
+                        <span class="badge badge-spmis">SP-MIS</span>
+                        <span class="badge badge-done">✓ Completed</span>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900 mb-0.5">openIMIS ↔ openG2P</h3>
+                    <p class="text-xs text-slate-400 mb-3">Farmer Registry &amp; Social Registry</p>
+                    <p class="text-sm text-slate-600 leading-relaxed mb-5">
+                        Enable openIMIS to act as an SP-MIS querying openG2P registries (Farmer Registry and Social Registry) via DCI/SPDCI Sync Search and Get Person APIs. Demonstrated use case: automatic enrollment of farmers with more than 3 children under 5, pulling eligibility data from openG2P and triggering enrollment in openIMIS.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="https://openimis.atlassian.net/wiki/spaces/OP/pages/4356800522/openSPP+Eligibility+openIMIS+Enrollment+Implementation"
+                           target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Documentation →
+                        </a>
+                        <button disabled class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Live Demo (coming soon)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── Card 6: openIMIS as Social Registry ─── -->
+        <section id="registry" class="mb-8">
+            <div class="integration-card bg-white border border-amber-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="h-1 bg-amber-400"></div>
+                <div class="partner-banner" style="background:#fffbeb; border-bottom-color:#fde68a;">
+                    <p class="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-3">DPG Partners</p>
+                    <div class="flex items-center gap-5 flex-wrap">
+                        <!-- openIMIS (as registry) -->
+                        <div class="partner-logo-block">
+                            <img src="https://openimis.org/themes/custom/ffw/logo.svg" alt="openIMIS" class="h-9 object-contain w-auto max-w-[110px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">openIMIS</span>
+                            <span class="pname">openIMIS</span>
+                        </div>
+                        <div class="partner-divider">↔</div>
+                        <!-- openSPP -->
+                        <div class="partner-logo-block">
+                            <img src="https://openspp.org/wp-content/uploads/2023/03/openspp-logo.png" alt="openSPP" class="h-9 object-contain w-auto max-w-[100px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">openSPP</span>
+                            <span class="pname">openSPP</span>
+                        </div>
+                        <!-- openG2P -->
+                        <div class="partner-logo-block">
+                            <img src="https://www.openg2p.org/wp-content/uploads/2022/08/openg2p-logo.png" alt="openG2P" class="h-9 object-contain w-auto max-w-[100px]"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                            <span class="logo-fallback">openG2P</span>
+                            <span class="pname">openG2P</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex flex-wrap gap-1.5 mb-2">
+                        <span class="badge badge-dci">DCI/SPDCI</span>
+                        <span class="badge badge-reg">Registry</span>
+                        <span class="badge badge-wip">⟳ In Progress</span>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900 mb-0.5">openIMIS as Social Registry</h3>
+                    <p class="text-xs text-slate-400 mb-3">DCI-compliant endpoint</p>
+                    <p class="text-sm text-slate-600 leading-relaxed mb-5">
+                        Expose openIMIS beneficiary data via DCI-compliant endpoints, allowing external SP-MIS systems (openSPP, openG2P) to query openIMIS as a social registry. openIMIS responds to Sync Search and Get Person requests from third-party social protection systems.
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="https://openimis.atlassian.net/wiki/spaces/OP/pages/4059955305/Project+2024.T4+Sandbox+Setup"
+                           target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Documentation →
+                        </a>
+                        <button disabled class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-400 bg-slate-100 rounded-lg cursor-not-allowed">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Live Demo (coming soon)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DCI Architecture Diagram -->
+        <div class="mb-16 bg-slate-50 border border-slate-200 rounded-xl p-6">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-5 text-center">DCI Architecture — openIMIS as Central Hub (SP-MIS + Registry)</p>
+            <div class="overflow-x-auto">
+                <svg viewBox="0 0 680 200" class="w-full max-w-2xl mx-auto" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <marker id="av1" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#c4b5fd"/></marker>
+                        <marker id="av2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#2563eb"/></marker>
+                    </defs>
+                    <rect x="8" y="16" width="120" height="42" rx="7" fill="white" stroke="#c4b5fd" stroke-width="1.5"/>
+                    <text x="68" y="33" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" font-weight="700" fill="#4c1d95">openCRVS</text>
+                    <text x="68" y="48" text-anchor="middle" font-family="Inter,sans-serif" font-size="7.5" fill="#64748b">Civil Registry</text>
+                    <rect x="8" y="76" width="120" height="42" rx="7" fill="white" stroke="#c4b5fd" stroke-width="1.5"/>
+                    <text x="68" y="93" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" font-weight="700" fill="#4c1d95">MOSIP</text>
+                    <text x="68" y="108" text-anchor="middle" font-family="Inter,sans-serif" font-size="7.5" fill="#64748b">Identity Platform</text>
+                    <path d="M130 37 Q 200 37 258 90" stroke="#c4b5fd" stroke-width="1.5" fill="none" marker-end="url(#av1)"/>
+                    <path d="M130 97 L 258 97" stroke="#c4b5fd" stroke-width="1.5" fill="none" marker-end="url(#av1)"/>
+                    <text x="196" y="55" text-anchor="middle" font-family="Inter,sans-serif" font-size="7" fill="#7c3aed" font-weight="600">OIDC</text>
+                    <text x="196" y="90" text-anchor="middle" font-family="Inter,sans-serif" font-size="7" fill="#7c3aed" font-weight="600">DCI</text>
+                    <rect x="262" y="58" width="152" height="80" rx="9" fill="#2563eb"/>
+                    <text x="338" y="88" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" font-weight="800" fill="white">openIMIS</text>
+                    <text x="338" y="105" text-anchor="middle" font-family="Inter,sans-serif" font-size="7.5" fill="#bfdbfe">SP-MIS + Registry</text>
+                    <rect x="278" y="114" width="56" height="14" rx="3" fill="#1d4ed8"/>
+                    <text x="306" y="124" text-anchor="middle" font-family="Inter,sans-serif" font-size="7" fill="#93c5fd" font-weight="600">Queries</text>
+                    <rect x="340" y="114" width="56" height="14" rx="3" fill="#1d4ed8"/>
+                    <text x="368" y="124" text-anchor="middle" font-family="Inter,sans-serif" font-size="7" fill="#93c5fd" font-weight="600">Exposes</text>
+                    <path d="M416 78 Q 470 50 546 47" stroke="#2563eb" stroke-width="1.5" fill="none" marker-end="url(#av2)"/>
+                    <path d="M416 112 Q 470 140 546 148" stroke="#2563eb" stroke-width="1.5" fill="none" marker-end="url(#av2)"/>
+                    <text x="480" y="60" text-anchor="middle" font-family="Inter,sans-serif" font-size="7" fill="#2563eb" font-weight="600">DCI Search</text>
+                    <text x="480" y="144" text-anchor="middle" font-family="Inter,sans-serif" font-size="7" fill="#2563eb" font-weight="600">DCI Registry</text>
+                    <rect x="548" y="20" width="120" height="42" rx="7" fill="white" stroke="#2563eb" stroke-width="1.5"/>
+                    <text x="608" y="37" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" font-weight="700" fill="#1e3a8a">openG2P</text>
+                    <text x="608" y="52" text-anchor="middle" font-family="Inter,sans-serif" font-size="7.5" fill="#64748b">Social Registry</text>
+                    <rect x="548" y="126" width="120" height="42" rx="7" fill="white" stroke="#2563eb" stroke-width="1.5"/>
+                    <text x="608" y="143" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" font-weight="700" fill="#1e3a8a">openSPP</text>
+                    <text x="608" y="158" text-anchor="middle" font-family="Inter,sans-serif" font-size="7.5" fill="#64748b">SP Platform</text>
+                </svg>
+            </div>
+        </div>
+
+    </div><!-- /content inner -->
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-100 bg-slate-50 px-6 py-8 lg:px-14">
+        <div class="max-w-4xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                    <img src="https://openimis.org/themes/custom/ffw/logo.svg" alt="openIMIS" class="h-5"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline'">
+                    <span style="display:none" class="text-xs font-bold text-blue-600">openIMIS</span>
+                </div>
+                <p class="text-xs text-slate-400">© 2025 openIMIS Foundation · GIZ Initiative · CC BY-SA 4.0</p>
+            </div>
+            <div class="flex items-center gap-5">
+                <a href="https://openimis.org" target="_blank" rel="noopener" class="text-xs text-slate-500 hover:text-blue-600 transition-colors font-medium">openimis.org</a>
+                <a href="https://openimis.atlassian.net/wiki/spaces/OP/pages/4059955305/Project+2024.T4+Sandbox+Setup" target="_blank" rel="noopener" class="text-xs text-slate-500 hover:text-blue-600 transition-colors font-medium">Wiki</a>
+                <a href="https://github.com/openimis" target="_blank" rel="noopener" class="text-xs text-slate-500 hover:text-blue-600 transition-colors font-medium flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    GitHub
+                </a>
+            </div>
+        </div>
+    </footer>
+
+</main>
+</div>
+
+<script>
+function app() {
+    return {
+        mobileOpen: false,
+        active: 'fhir',
+        onScroll() {
+            const anchors = [
+                { id: 'fhir',     key: 'fhir' },
+                { id: 'medic',    key: 'medic' },
+                { id: 'bahmni',   key: 'bahmni' },
+                { id: 'openhim',  key: 'openhim' },
+                { id: 'dci',      key: 'dci' },
+                { id: 'mosip',    key: 'mosip' },
+                { id: 'openg2p',  key: 'openg2p' },
+                { id: 'registry', key: 'registry' },
+            ];
+            const offset = window.scrollY + 100;
+            for (let i = anchors.length - 1; i >= 0; i--) {
+                const el = document.getElementById(anchors[i].id);
+                if (el && el.offsetTop <= offset) {
+                    this.active = anchors[i].key;
+                    break;
+                }
+            }
+        }
+    };
+}
+</script>
+</body>
+</html>

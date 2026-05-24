@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>openIMIS Sandbox Interoperability</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .prose code { 
+            background-color: #f1f5f9; 
+            padding: 0.2rem 0.4rem; 
+            border-radius: 4px; 
+            font-family: 'Consolas', 'Monaco', monospace; 
+            font-size: 0.85em;
+            color: #2563eb;
+        }
+        .sidebar-active { 
+            background-color: #eff6ff; 
+            color: #2563eb; 
+            border-right: 4px solid #2563eb;
+            font-weight: 600;
+        }
+        html { scroll-behavior: smooth; }
+        section { scroll-margin-top: 6rem; }
+    </style>
+</head>
+<body class="bg-white text-slate-900" x-data="{ 
+    activeChapter: 'mosip',
+    chapters: [
+        { id: 'mosip', title: 'MOSIP & openIMIS', icon: '🆔' },
+        { id: 'future', title: 'Future Integrations', icon: '🔌' }
+    ]
+}">
+
+    <!-- Header -->
+    <header class="fixed top-0 z-40 w-full bg-white border-b border-slate-200">
+        <div class="flex items-center h-16 px-6">
+            <div class="flex items-center gap-4">
+                <img src="https://openimis.org/themes/custom/ffw/logo.svg" alt="openIMIS" class="h-8">
+                <div class="h-6 w-px bg-slate-200"></div>
+                <h1 class="text-sm font-bold tracking-tight text-slate-700 uppercase">Sandbox Interoperability</h1>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="fixed left-0 top-16 w-72 h-[calc(100vh-4rem)] border-r border-slate-100 overflow-y-auto hidden lg:block bg-slate-50/50">
+            <div class="p-8">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Guides</p>
+                <nav class="space-y-2">
+                    <template x-for="chapter in chapters" :key="chapter.id">
+                        <button @click="activeChapter = chapter.id"
+                            :class="activeChapter === chapter.id ? 'sidebar-active' : 'text-slate-600 hover:bg-slate-100'"
+                            class="w-full text-left px-4 py-3 rounded-l-lg transition flex items-center gap-3">
+                            <span x-text="chapter.icon"></span>
+                            <span x-text="chapter.title"></span>
+                        </button>
+                    </template>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-72 pt-16">
+            <div class="max-w-4xl mx-auto px-6 py-12 lg:px-16">
+                
+                <div x-show="activeChapter === 'mosip'">
+                    <!-- Hero Section -->
+                    <header class="mb-16">
+                        <div class="flex items-center gap-6 mb-8">
+                            <img src="https://openimis.org/themes/custom/ffw/logo.svg" class="h-10" alt="openIMIS">
+                            <span class="text-2xl text-slate-300">/</span>
+                            <img src="https://www.mosip.io/images/mosipn-logo.png" class="h-8" alt="MOSIP">
+                        </div>
+                        <h2 class="text-4xl font-extrabold text-slate-900 tracking-tight mb-4">How identity verification fits into enrolment</h2>
+                        <p class="text-lg text-slate-600 leading-relaxed">
+                            This page walks through the integration end to end: OpenID Connect and OAuth 2.0 on the wire, GraphQL between the React insuree module and Django, and how verified attributes land in the record.
+                        </p>
+                    </header>
+
+                    <!-- Steps -->
+                    <div class="space-y-20">
+                        <section id="step1">
+                            <h3 class="text-2xl font-bold text-slate-800 mb-4">Step 1: Open the insured person in openIMIS</h3>
+                            <p class="text-slate-600 mb-6">Staff use the standard UI to search and prepare edits. The MOSIP path is an add-on that does not replace openIMIS permissions or business rules.</p>
+                            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                <h4 class="text-xs font-bold text-blue-600 uppercase mb-3">Protocols and technology</h4>
+                                <ul class="space-y-2 text-sm text-slate-700">
+                                    <li><strong>Frontend:</strong> React 17, Material UI v4, <code>@openimis/fe-insuree</code>, <code>graphqlWithVariables</code>.</li>
+                                    <li><strong>API:</strong> Follows the openIMIS GraphQL schema to establish the insuree UUID and draft state.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        
+
+                        <section id="step2">
+                            <h3 class="text-2xl font-bold text-slate-800 mb-4">Step 2: Redirect to MOSIP (eSignet)</h3>
+                            <p class="text-slate-600 mb-6">MOSIP’s eSignet acts as an OpenID Provider (OIDC). After login, the browser returns to a redirect URI with an authorization code and state.</p>
+                            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                <h4 class="text-xs font-bold text-blue-600 uppercase mb-3">Implementation Details</h4>
+                                <ul class="space-y-2 text-sm text-slate-700">
+                                    <li><strong>Flow:</strong> <code>response_type=code</code> (Authorization Code Flow) with PKCE (RFC 7636).</li>
+                                    <li><strong>Security:</strong> <code>code_challenge</code> and <code>code_challenge_method=S256</code>.</li>
+                                    <li><strong>UI Surface:</strong> <code>generateSignInUrl</code> and <code>MosipCallbackPage</code> handle the return path.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section id="step3">
+                            <h3 class="text-2xl font-bold text-slate-800 mb-4">Step 3: Server-side Token Exchange</h3>
+                            <p class="text-slate-600 mb-6">The browser passes the code to openIMIS via GraphQL. The backend performs the exchange over HTTPS using a JWT client assertion signed with a private key.</p>
+                            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                <h4 class="text-xs font-bold text-blue-600 uppercase mb-3">Back-channel Protocols</h4>
+                                <ul class="space-y-2 text-sm text-slate-700">
+                                    <li><strong>Grant:</strong> <code>grant_type=authorization_code</code> via <code>POST</code> to token endpoint.</li>
+                                    <li><strong>Auth:</strong> RFC 7523 <code>jwt-bearer</code> client assertion using <code>PRIVATE_KEY_BASE64</code>.</li>
+                                    <li><strong>Backend:</strong> <code>ExchangeCodeMutation</code> (Graphene) using <code>httpx</code>.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section id="step4">
+                            <h3 class="text-2xl font-bold text-slate-800 mb-4">Step 4: Call UserInfo with Access Token</h3>
+                            <p class="text-slate-600 mb-6">The backend calls MOSIP’s UserInfo endpoint with <code>Authorization: Bearer &lt;token&gt;</code> to retrieve name-verified claims.</p>
+                            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                <h4 class="text-xs font-bold text-blue-600 uppercase mb-3">Claims Processing</h4>
+                                <ul class="space-y-2 text-sm text-slate-700">
+                                    <li><strong>Standard Claims:</strong> <code>sub</code>, <code>name</code>, <code>birthdate</code>, <code>gender</code>, <code>email</code>, <code>phone_number</code>, <code>address</code>, <code>picture</code>.</li>
+                                    <li><strong>Handling:</strong> <code>UserInfoMutation</code> returns raw payload to <code>fetchUserInfoRaw</code>.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section id="step5">
+                            <h3 class="text-2xl font-bold text-slate-800 mb-4">Step 5: Map claims to insuree model</h3>
+                            <p class="text-slate-600 mb-6">The <code>populateInsureeFromAuthCode</code> orchestrator maps OIDC claims to openIMIS fields, including normalizing dates and converting pictures to Base64.</p>
+                            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                <h4 class="text-xs font-bold text-blue-600 uppercase mb-3">Persistence Logic</h4>
+                                <ul class="space-y-2 text-sm text-slate-700">
+                                    <li><strong>GraphQL:</strong> Uses existing create/update mutations from <code>openimis-be-insuree_py</code>.</li>
+                                    <li><strong>UX:</strong> <code>MosipCallbackPage</code> tracks progress (loading/success/error) for the operator.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <!-- Security Section -->
+                        <section id="security" class="pt-10 border-t border-slate-100">
+                            <h3 class="text-2xl font-bold text-slate-800 mb-6">Security & Trust Boundaries</h3>
+                            <div class="grid md:grid-cols-3 gap-6">
+                                <div class="p-4 border border-slate-200 rounded-lg">
+                                    <h5 class="font-bold text-sm mb-2">Server-side Exchange</h5>
+                                    <p class="text-xs text-slate-500 leading-relaxed">Private JWKs and Client IDs stay in the server environment, never shipped to the React client.</p>
+                                </div>
+                                <div class="p-4 border border-slate-200 rounded-lg">
+                                    <h5 class="font-bold text-sm mb-2">Standards</h5>
+                                    <p class="text-xs text-slate-500 leading-relaxed">OAuth 2.0 + PKCE, OIDC, RFC 7523, RS256, and GraphQL over HTTPS.</p>
+                                </div>
+                                <div class="p-4 border border-slate-200 rounded-lg">
+                                    <h5 class="font-bold text-sm mb-2">Operational Note</h5>
+                                    <p class="text-xs text-slate-500 leading-relaxed">Redirect URIs and Client IDs must perfectly match the MOSIP eSignet registration.</p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- Future Placeholder -->
+                <div x-show="activeChapter === 'future'" class="py-24 text-center border-2 border-dashed border-slate-200 rounded-3xl">
+                    <p class="text-slate-500">Documentation for future integrations will be added here.</p>
+                </div>
+
+                <footer class="mt-24 pt-8 border-t border-slate-100 text-slate-400 text-[10px] tracking-widest uppercase text-center">
+                    © 2026 openIMIS Foundation
+                </footer>
+            </div>
+        </main>
+
+        <!-- Table of Contents -->
+        <aside class="w-64 hidden xl:block sticky top-16 h-fit p-10">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Steps</p>
+            <nav class="space-y-4 text-sm font-medium">
+                <a href="#step1" class="block text-slate-400 hover:text-blue-600 transition">1. Context</a>
+                <a href="#step2" class="block text-slate-400 hover:text-blue-600 transition">2. Redirect</a>
+                <a href="#step3" class="block text-slate-400 hover:text-blue-600 transition">3. Exchange</a>
+                <a href="#step4" class="block text-slate-400 hover:text-blue-600 transition">4. UserInfo</a>
+                <a href="#step5" class="block text-slate-400 hover:text-blue-600 transition">5. Mapping</a>
+            </nav>
+        </aside>
+    </div>
+</body>
+</html>

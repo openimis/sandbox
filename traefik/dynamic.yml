@@ -28,6 +28,13 @@ http:
       tls:
         certResolver: letsencrypt
 
+    openimisdev:
+      rule: Host(`openimisdev.s2.openimis.org`)
+      entryPoints: [https]
+      service: openimisdev
+      tls:
+        certResolver: letsencrypt
+
     openhimconsole:
       rule: Host(`openhim.s2.openimis.org`)
       entryPoints: [https]
@@ -77,6 +84,11 @@ http:
       loadBalancer:
         servers:
           - url: http://192.168.11.230:80
+
+    openimisdev:
+      loadBalancer:
+        servers:
+          - url: http://192.168.11.230:81
 
     openhimconsole:
       loadBalancer:
