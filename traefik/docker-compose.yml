@@ -17,12 +17,14 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.email=contact@openimis.org"
       - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
       - "--certificatesresolvers.letsencrypt.acme.httpChallenge.entryPoint=http"
-
+      - "--entryPoints.postgres-hackathon.address=:5433"
       - "--entrypoints.http.address=0.0.0.0:80"
     ports:
       - "80:80"
-      - "443:443" 
+      - "443:443"
+      - "8081:8081"
       - "127.0.0.1:8080:8080"
+      - "5433:5433"
     labels:
       # Dashboard
       - "traefik.http.routers.traefik.rule=Host(`sb-setup-traefik.bastion.y-note.cm`)"
