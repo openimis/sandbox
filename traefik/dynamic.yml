@@ -136,3 +136,15 @@ http:
       insecureSkipVerify: true
     cht-transport:
       insecureSkipVerify: true
+
+tcp:
+  routers:
+    postgres-hackathon:
+      rule: "HostSNI(`*`)"
+      entryPoints: [postgres-hackathon]
+      service: postgres-hackathon
+  services:
+    postgres-hackathon:
+      loadBalancer:
+        servers:
+          - address: "192.168.11.230:5432"
