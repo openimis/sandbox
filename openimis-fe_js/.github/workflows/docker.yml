@@ -1,0 +1,23 @@
+name: Create daily Docker image on develop
+on:
+  workflow_dispatch:
+  schedule:
+   - cron: "0 2 * * *"
+jobs:
+  publish-docker-develop-image:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: develop
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Building the openIMIS Frontend Docker image
+      run: |
+         LABEL=develop
+         docker build . --tag ghcr.io/openimis/openimis-fe:${LABEL}
+         docker push ghcr.io/openimis/openimis-fe:${LABEL}
